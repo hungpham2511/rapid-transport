@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Kinbody name="heavy_alum_piece">
+ <Body name="Body1" type="dynamic">
+   <Mass type="mimicgeom">
+     <density>1000</density>
+   </Mass>
+   <Geom type="box">
+     <Translation>0 0 1e-4</Translation>
+     <Extents>57e-3 22.5e-3 5e-3</Extents>
+   </Geom>
+ </Body>
+</Kinbody>

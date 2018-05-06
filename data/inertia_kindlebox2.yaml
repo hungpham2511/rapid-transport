@@ -1,0 +1,26 @@
+unit: mm
+
+acrylic_cube1:
+  kind: cube
+  mass: 0.137
+  size: [80, 100, 14.5]
+  com_position: [0, 0, 14.5/2]
+
+# alum_cube2:
+#   kind: cube
+#   mass: 0.1
+#   size: [25, 62.5, 25]
+#   com_position: [52.5, 0, 25.0 / 2]
+
+# alum_cube3:
+#   kind: cube
+#   mass: 0.1
+#   size: [25, 62.5, 25]
+#   com_position: [-52.5, 0, 25.0/2]
+
+carton_box:
+  kind: hollow_cube
+  mass: 0.0733
+  outer_size: [25, 62.5, 25]
+  thickness: 2
+  com_position: [0, 0, 12.5]

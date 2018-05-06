@@ -1,0 +1,113 @@
+
+# NOTE
+# rave_model: use only for collision checking.
+
+kindlebox_light:
+  description: A kindle package box, padded with an acrylic piece inside (for added weight).
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/kindle_box.xml
+  position: [0, 0, 9.080e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.2103
+  local_inertia:
+    - [ 1.535e-4, 0,        0       ]
+    - [ 0,        8.879e-5, 0       ]
+    - [ 0,        0,        2.228e-4]
+
+kindlebox:
+  description: A kindle package box, padded with two small aluminium pieces and an acrylic piece inside (for added weight).
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/kindle_box.xml
+  position: [0, 0, 12.390e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.4103
+  local_inertia:
+    - [ 3.311e-4, 0,        0       ]
+    - [ 0,        8.811e-4, 0       ]
+    - [ 0,        0,        1.162e-3]
+
+small_alum_block:
+  description: Small silver aluminium block.
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  position: [0, 0, 12.5e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.1
+  local_inertia:
+    - [  3.82620833e-05,   0.00000000e+00,   0.00000000e+00]
+    - [  0.00000000e+00,   1.05840000e-05,   0.00000000e+00]
+    - [  0.00000000e+00,   0.00000000e+00,   3.82620833e-05]
+
+tall_alum_block:
+  description: Two small silver aluminium blocks, attached together. The frame is defined such that the Z-axis is pointing along the long edge of the block, while X, and Y-axes are perpendicular to the faces.
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/tall_alum.xml
+  position: [0, 0, 62.5e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.2
+  local_inertia:
+    - [  226.0e-06,   0.00,   0.00000000e+00]
+    - [  0,           226.0e-6,   0.00000000e+00]
+    - [  0,           0.00,   20.0e-06]
+
+small_alum_block_2:
+  description: Small silver aluminium block, attached this time on the lower end of the gripper
+  attached_to_manipulator: denso_ft_sensor
+  attached_to_robot: denso_ft_sensor_gripper.robot.xml
+  position: [0, -0.03, 0.15536]
+  orientation:
+    - [0, 1, 0]
+    - [0, 0, 1]
+    - [1, 0, 0]
+  mass: 0.1
+  local_inertia:
+    - [  3.82620833e-05,   0.00000000e+00,   0.00000000e+00]
+    - [  0.00000000e+00,   1.05840000e-05,   0.00000000e+00]
+    - [  0.00000000e+00,   0.00000000e+00,   3.82620833e-05]
+
+heavy_alum_1:
+  description: The heavy aluminium block, attached directly on the suction cup. The COM of the block is direclty below the cup itself.
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/heavy_alum.xml
+  position: [0, 0, 5e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.377
+  local_inertia:
+    - [  7.05000000e-05,   0.00000000e+00,   0.00000000e+00]
+    - [  0.00000000e+00,   38.8000000e-05,   0.00000000e+00]
+    - [  0.00000000e+00,   0.00000000e+00,   45.2620833e-05]
+
+heavy_alum_2:
+  description: The heavy aluminium block, attached directly on the suction cup. The COM of the block is direclty below the cup itself.
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/heavy_alum.xml
+  position: [0e-3, 5e-3, 5e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.377
+  local_inertia:
+    - [  7.05000000e-05,   0.00000000e+00,   0.00000000e+00]
+    - [  0.00000000e+00,   38.8000000e-05,   0.00000000e+00]
+    - [  0.00000000e+00,   0.00000000e+00,   45.2620833e-05]

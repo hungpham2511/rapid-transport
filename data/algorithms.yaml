@@ -1,0 +1,24 @@
+topp_fast:
+  kind: time-optimal
+  N: 50
+  interpolate_kinematics: True
+  interpolate_dynamics: False
+  sampling_period: 0.006666666666666667
+  solver_wrapper: qpOASES
+
+topp_fast_2:
+  kind: time-optimal
+  N: 50
+  interpolate_kinematics: True
+  interpolate_dynamics: True
+  sampling_period: 0.006666666666666667
+  solver_wrapper: qpOASES
+
+topp_fast_cvxpy:
+  kind: time-optimal
+  N: 50
+  interpolate_kinematics: True
+  interpolate_dynamics: False
+  sampling_period: 0.006666666666666667
+  solver_wrapper: cvxpy
+

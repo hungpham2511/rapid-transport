@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Robot name="denso_ft_sensor_gripper">
+
+  <!-- Denso -->
+  <Robot file="robots/denso_ft_sensor.robot.xml"></Robot>
+
+  <!-- Upper Interface Plate -->
+  <Kinbody>
+    <body name="gamma_upperplate" type="dynamic">
+      <Geom type="trimesh" modifiable="true">
+        <diffuseColor>0.2 0.2 0.2</diffuseColor>
+        <render>meshes/ati_gamma/gamma_robotiq.stl 1.0</render>
+        <collision>meshes/ati_gamma/gamma_robotiq.stl 1.0</collision>
+        <!-- Align the mesh -->
+        <translation>0 0 -0.015</translation>
+      </Geom>
+      <!-- Set the local frame -->
+      <offsetfrom>ati_ft_sensor</offsetfrom>
+      <translation>0 0 0.015</translation>
+    </body>
+    <joint name="joint_gamma_upperplate" type="hinge" enable="false">
+      <body>ati_ft_sensor</body>
+      <body>gamma_upperplate</body>
+      <limitsdeg>0 0</limitsdeg>
+    </joint>
+  </Kinbody>
+
+  <!-- Gripper + Coupler -->
+  <Kinbody file="robots/robotiq_85_gripper.robot.xml">
+    <rotationaxis>0 0 1 90</rotationaxis>
+  </Kinbody>
+  <!-- Attach the gripper to the robot -->
+  <Kinbody>
+    <body name="robotiq_coupler">
+      <offsetfrom>gamma_upperplate</offsetfrom>
+      <rotationaxis>0 0 1 -90</rotationaxis>
+    </body>
+    <joint name="joint_gamma_robotiq" type="hinge" enable="false">
+      <body>gamma_upperplate</body>
+      <body>robotiq_coupler</body>
+      <limitsdeg>0 0</limitsdeg>
+    </joint>
+  </Kinbody>
+
+  <!-- Define the manipulators -->
+  <Manipulator name="denso_ft_sensor_gripper">
+    <base>link0</base>
+    <effector>robotiq_coupler</effector>
+    <translation>0 0 0.144</translation>
+    <joints>robotiq_85_left_knuckle_joint</joints>
+    <closingdirection>1</closingdirection>
+    <direction>0 0 1</direction>
+  </Manipulator>
+
+  <adjacent>gamma_upperplate link6</adjacent>
+  <adjacent>gamma_upperplate gamma_lowerplate</adjacent>
+  <adjacent>gamma_upperplate ati_ft_sensor</adjacent>
+  <adjacent>gamma_upperplate robotiq_85_gripper</adjacent>
+
+  <adjacent>robotiq_85_gripper link6</adjacent>
+  <adjacent>robotiq_85_gripper gamma_lowerplate</adjacent>
+  <adjacent>robotiq_85_gripper ati_ft_sensor</adjacent>
+  <adjacent>robotiq_85_gripper gamma_upperplate</adjacent>
+
+</Robot>

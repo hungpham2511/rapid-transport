@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="denso_ft_sensor">
+
+  <!-- Include components (bottom-up) -->
+  <!-- Denso -->
+  <robot file="robots/denso_vs060.dae"></robot>
+
+  <!-- Rear connector -->
+  <kinbody>
+    <body name="rear_connector">
+      <geom type="box">
+        <extents>0.07 0.07 0.08</extents>
+        <diffuseColor>0.85  0.85  0.85</diffuseColor>
+      </geom>
+      <offsetfrom>link0</offsetfrom>
+      <translation>-0.07 0 0.08</translation>
+      <translation>-0.15 0 0</translation>
+    </body>
+    <joint name="joint_rear_connector" type="hinge" enable="false">
+      <body>link0</body>
+      <body>rear_connector</body>
+      <limits>0 0</limits>
+    </joint>
+  </kinbody>
+
+  <!-- Lower Interface Plate -->
+  <kinbody>
+    <body name="gamma_lowerplate" type="dynamic">
+      <geom type="trimesh" modifiable="true">
+        <diffuseColor>0.2 0.2 0.2</diffuseColor>
+        <render>meshes/ati_gamma/denso_gamma.stl 1.0</render>
+        <collision>meshes/ati_gamma/denso_gamma.stl 1.0</collision>
+      </geom>
+      <offsetfrom>link6</offsetfrom>
+      <!-- Rotate frame with respect link6 -->
+      <rotationaxis>0 0 1 90</rotationaxis>
+    </body>
+    <joint name="joint_denso_gamma" type="hinge" enable="false">
+      <body>link6</body>
+      <body>gamma_lowerplate</body>
+      <limits>0 0</limits>
+    </joint>
+  </kinbody>
+
+  <!-- ATI sensor -->
+  <kinbody>
+    <body name="ati_ft_sensor" type="dynamic">
+      <geom type="trimesh" modifiable="true">
+        <diffuseColor>0.85  0.85  0.85</diffuseColor>
+        <render>meshes/ati_gamma/ati_gamma.stl 1.0</render>
+        <collision>meshes/ati_gamma/ati_gamma.stl 1.0</collision>
+        <!-- Align the mesh -->
+        <translation>0 0 -0.0146</translation>
+        <rotationaxis>1 0 0 180</rotationaxis>
+        <rotationaxis>0 0 1 150</rotationaxis>
+      </geom>
+      <geom type="cylinder">
+        <transparency>0.15</transparency>
+        <rotationaxis>1 0 0 90</rotationaxis>
+        <radius>0.011</radius>
+        <height>0.06</height>
+        <diffuseColor>0.02 0.02 0.02</diffuseColor>
+        <rotationaxis>1 0 0 90</rotationaxis>
+        <rotationaxis>0 0 1 -30</rotationaxis>
+        <translation>0 0 -0.018015</translation>
+        <translation>-0.014999999999999998 -0.02598076211353316 0</translation> <!-- 0.03 < 210 -->
+        <translation>-0.042461225547551031 0.024514999999999999 0</translation> <!-- 0.011+0.03803 < 150 -->
+     </geom>
+      <offsetfrom>gamma_lowerplate</offsetfrom>
+      <translation>0 0 0.0386</translation>
+    </body>
+    <joint name="joint_gamma_ati" type="hinge" enable="false">
+      <body>gamma_lowerplate</body>
+      <body>ati_ft_sensor</body>
+      <limits>0 0</limits>
+    </joint>
+  </kinbody>
+
+  <!-- suction cup -->
+  <kinbody>
+    <body name='suction_cup_holder' type="dynamic">
+      <geom type="trimesh" modifiable="true">
+        <diffuseColor> 0.69019608  0.76862745  0.87058824</diffuseColor>
+        <render>meshes/suction_cup/suction_cup_holder.stl 0.001</render>
+        <collision>meshes/suction_cup/suction_cup_holder.stl 0.001</collision>
+      </geom>
+      <offsetfrom>ati_ft_sensor</offsetfrom>
+      <rotationaxis>0 0 1 -90</rotationaxis>
+    </body>
+    <joint name="joint_suction_cup_holder" type="hinge" enable="false">
+      <body>ati_ft_sensor</body>
+      <body>suction_cup_holder</body>
+      <limits>0 0</limits>
+    </joint>
+
+    <!-- length of the suction head d = 43mm -->
+    <!-- position of the outer mount face: dx =, dz= -->
+    <body name="suction_head" type="dynamic">
+      <geom type="trimesh" modifiable="true">
+        <diffuseColor> 0.43921569  0.50196078  0.56470588 </diffuseColor>
+        <render>meshes/suction_cup/suction_head.stl 0.001</render>
+        <collision>meshes/suction_cup/suction_head.stl 0.001</collision>
+      </geom>
+      <offsetfrom>suction_cup_holder</offsetfrom>
+      <rotationaxis>0 0 1 180</rotationaxis>
+      <rotationaxis>0 1 0 90</rotationaxis>
+      <translation>0.03 0.0 0.03375 </translation>
+    </body>
+    <joint name="joint_suction_head" type="hinge" enable="false">
+      <body>suction_cup_holder</body>
+      <body>suction_head</body>
+      <limits>0 0</limits>
+    </joint>
+  </kinbody>
+
+  <!-- Define the manipulator -->
+  <manipulator name="denso_ft_sensor">
+    <base>link0</base>
+    <effector>ati_ft_sensor</effector>
+    <translation>0 0 0</translation>
+  </manipulator>
+
+  <!-- Define the manipulator -->
+  <manipulator name="denso_suction_cup">
+    <base>link0</base>
+    <effector>suction_head</effector>
+    <translation>0 0 0.043</translation>
+  </manipulator>
+
+  <adjacent>link0 rear_connector</adjacent>
+  <adjacent>link6 gamma_lowerplate</adjacent>
+  <adjacent>link6 ati_ft_sensor</adjacent>
+  <adjacent>gamma_lowerplate ati_ft_sensor</adjacent>
+  <adjacent>ati_ft_sensor suction_cup_holder</adjacent>
+  <adjacent>suction_cup_holder suction_head</adjacent>
+
+</robot>

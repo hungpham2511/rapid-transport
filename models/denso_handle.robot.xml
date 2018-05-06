@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Robot name="denso_handle">
+  
+  <!-- Include the robots -->
+  <Robot file="denso_vs060.dae"></Robot>
+
+  <!-- FT sensor model -->
+  <Kinbody>
+    <body name="FTsensor">
+      <offsetfrom>link6</offsetfrom>
+      <RotationAxis>0 0 1 90</RotationAxis>  
+      <Translation> 0 0 0.045 </Translation>
+      <mass type="custom">
+	<total>0.1</total>
+	<inertia>
+	  6.69695624e-05  5.21511788e-09   -2.74383009e-08
+	  0               7.85088161e-05    5.41105193e-07
+	  0               0                 1.41819717e-04
+	</inertia>
+      </mass>
+      <!-- Lower cyl -->
+      <Geom type="cylinder">
+	<!-- Turn the rotation axis from Y to Z -->
+	<RotationAxis>1 0 0 -90</RotationAxis>  
+	<radius>0.02</radius>
+	<height>0.045</height>
+	<translation>0 0 -0.0225</translation>
+	<diffusecolor>0 0 0</diffusecolor>
+      </Geom>
+      <!-- Upper, white cyl -->
+      <Geom type="cylinder">
+	<!-- Turn the rotation axis from Y to Z -->
+	<RotationAxis>1 0 0 -90</RotationAxis>  
+	<radius>0.03</radius>
+	<height>0.03</height>
+	<translation>0 0 -0.015</translation>
+	<diffusecolor>1 1 1</diffusecolor>
+      </Geom>
+      <!-- Indicator, blue cyl -->
+      <Geom type="cylinder">
+	<!-- Turn the rotation axis from Y to Z -->
+	<RotationAxis>1 0 0 -90</RotationAxis>  
+	<radius>0.031</radius>
+	<height>0.005</height>
+	<diffusecolor>0 0.5 1</diffusecolor>
+      </Geom>
+    </body>
+    <joint name="ft_joint" type="hinge" enable="false">
+      <body>link6</body>
+      <body>FTsensor</body>
+      <limits>0 0</limits>
+    </joint>
+  </Kinbody>
+  
+  
+  <!-- Attach the handle to the robot -->
+  <Kinbody>
+    <body name="handle">
+      <offsetfrom>FTsensor</offsetfrom>
+      <Translation> 0 0 0.07 </Translation>
+      <RotationAxis>0 0 1 90</RotationAxis>  
+      <mass type="custom">
+      	<total>0.1</total>
+  	<inertia>
+  	  6.69695624e-05  5.21511788e-09   -2.74383009e-08
+  	  0               7.85088161e-05    5.41105193e-07
+  	  0               0                 1.41819717e-04
+  	</inertia>
+      </mass>
+      <Geom type="sphere">
+  	<Radius> 0.03 </Radius>
+	<Translation> 0 0 -0.03</Translation>
+	<diffusecolor>1 0.6 0.2</diffusecolor>
+      </Geom>
+      <Geom type="cylinder">
+	<!-- Turn the rotation axis from Y to Z -->
+	<RotationAxis>1 0 0 -90</RotationAxis>  
+	<radius>0.02</radius>
+	<height>0.02</height>
+	<translation>0 0 -0.06</translation>
+	<diffusecolor>0 0 0</diffusecolor>
+      </Geom>
+    </body>
+    <joint name="FTsensor_handle" type="hinge" enable="false">
+      <body>link6</body>
+      <body>handle</body>
+      <limits>0 0</limits>
+    </joint>
+  </Kinbody>
+  
+  <!-- Define the manipulator -->
+  <Manipulator name="handle">
+    <base>link0</base>
+    <effector>handle</effector>
+    <closingdirection>1 1 1 0</closingdirection>
+    <direction>0 0 1</direction>
+  </Manipulator>
+  <Manipulator name="FTsensor">
+    <base>link0</base>
+    <effector>FTsensor</effector>
+    <closingdirection>1 1 1 0</closingdirection>
+    <direction>0 0 1</direction>
+  </Manipulator>
+</Robot>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Robot name="denso_robotiq_85_gripper">
+  
+  <!-- Include the robots -->
+  <Robot file="denso_vs060.dae"></Robot>
+
+  <Kinbody file="robotiq_85_gripper.robot.xml">
+    <rotationaxis>0 0 1 90</rotationaxis>
+  </Kinbody>
+  
+  <!-- Attach the gripper to the robot -->
+  <Kinbody>
+    <body name="robotiq_coupler">
+      <offsetfrom>link6</offsetfrom>
+      <mass type="custom">
+      	<total>0.168</total>
+	<inertia>
+	  6.69695624e-05  5.21511788e-09   -2.74383009e-08
+	  0               7.85088161e-05    5.41105193e-07
+	  0               0                 1.41819717e-04
+	</inertia>
+      </mass>
+    </body>
+    <joint name="joint_denso_robotiq" type="hinge" enable="false">
+      <body>link6</body>
+      <body>robotiq_coupler</body>
+      <limits>0 0</limits>
+    </joint>
+  </Kinbody>
+
+  <!-- Dummy body around the gripper -->
+   <Kinbody>
+    <body name="dummy_coupler">
+      <Geom type="box">
+        <translation>0.0 0.0 0.095</translation>
+        <extents>0.1 0.1 0.125</extents>
+        <diffusecolor>1 1 1</diffusecolor>
+	<transparency>0.3</transparency>
+      </Geom>
+      <offsetfrom>link6</offsetfrom>
+      <mass type="custom">
+      	<total>0.168</total>
+	<inertia>
+	  6.69695624e-05  5.21511788e-09   -2.74383009e-08
+	  0               7.85088161e-05    5.41105193e-07
+	  0               0                 1.41819717e-04
+	</inertia>
+      </mass>
+    </body>
+    <joint name="joint_denso_dummy_coupler" type="hinge" enable="false">
+      <body>link6</body>
+      <body>dummy_coupler</body>
+      <limits>0 0</limits>
+    </joint>
+  </Kinbody>
+
+ 
+  <!-- Define the manipulator -->
+  <Manipulator name="gripper">
+    <base>link0</base>
+    <effector>robotiq_coupler</effector>
+    <translation>0 0 0.144</translation>
+    <joints>robotiq_85_left_knuckle_joint</joints>
+    <closingdirection>1 1 1 0</closingdirection>
+    <direction>0 0 1</direction>
+  </Manipulator>
+  
+  <!-- This one if for backwards compatibility -->
+  <Manipulator name="denso_robotiq_85_gripper">
+    <base>link0</base>
+    <effector>robotiq_coupler</effector>
+    <translation>0 0 0.144</translation>
+    <joints>robotiq_85_left_knuckle_joint</joints>
+    <closingdirection>1 1 1 0</closingdirection>
+    <direction>0 0 1</direction>
+  </Manipulator>
+</Robot>

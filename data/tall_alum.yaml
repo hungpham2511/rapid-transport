@@ -1,0 +1,14 @@
+unit: mm
+
+
+cube2:
+  mass: 0.1
+  size: [25, 25, 62.5]
+  com_position: [0, 0, 31.25]
+
+
+cube3:
+  mass: 0.1
+  size: [25, 25, 62.5]
+  com_position: [0, 0, 93.75]
+

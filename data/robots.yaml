@@ -1,0 +1,18 @@
+suctioncup1:
+  velocity_limits: [ 3.92699082,  2.61799388,  2.85832572,  3.92699082,  3.02168853, 6.28318531]
+  acceleration_limits: [ 19.73356519,  16.84469621,  20.70885517,  20.96646577, 23.72286426,  33.51032164]
+  robot_model: denso_ft_sensor_suction.robot.xml
+  manipulator: denso_suction_cup
+
+suctioncup1_slow:
+  description: "Safety for velocity: 0.7, acceleration: 0.6"
+  velocity_limits: [2.74889357,  1.83259572,  2.000828  ,  2.74889357,  2.11518197, 4.39822972]
+  acceleration_limits: [ 11.84013911,  10.10681773,  12.4253131 ,  12.57987946, 14.23371856,  20.10619298]
+  robot_model: denso_ft_sensor_suction.robot.xml
+  manipulator: denso_suction_cup
+
+gripper1:
+  velocity_limits: [ 3.92699082,  2.61799388,  2.85832572,  3.92699082,  3.02168853, 6.28318531]
+  acceleration_limits: [ 19.73356519,  16.84469621,  20.70885517,  20.96646577, 23.72286426,  33.51032164]
+  robot_model: denso_ft_sensor_gripper.robot.xml
+  manipulator: denso_ft_sensor_gripper

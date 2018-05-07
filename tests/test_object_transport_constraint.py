@@ -7,6 +7,7 @@ import openravepy as orpy
 import time
 import toppra as ta
 import matplotlib.pyplot as plt
+import pytest
 
 import toppra_app
 import coloredlogs
@@ -43,6 +44,7 @@ def create_object_transporation_constraint(contact, solid_object):
     return constraint
 
 
+@pytest.mark.skip(reason="unable to test for now")
 def test_overall():
     env = orpy.Environment()
     env.Load('../models/denso_ft_gripper_with_base.robot.xml')

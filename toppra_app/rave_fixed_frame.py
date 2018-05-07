@@ -54,7 +54,7 @@ class RaveRobotFixedFrame(object):
         if dofindices is None:
             dofindices = self.dofindices
         with self.robot:
-            self.robot.SetDOFValues(q, dofindices)
+            self.robot.SetActiveDOFValues(q)
             link = self.robot.GetLink(self.link_name)
             T_world_link = link.GetTransform()
             T_world_contact = T_world_link.dot(self.T_link_contact)

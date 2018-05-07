@@ -4,17 +4,29 @@ from .rave_fixed_frame import RaveRobotFixedFrame
 
 
 class Contact(RaveRobotFixedFrame):
-    """ A class represents the robot contact interface.
+    """A class representing the contact between the robot an external object.
+
+    Note that the frame {contact} is not necessarily placed at the
+    center of the physical contact. It can be anywhere, even floating
+    in empty space. This frame is only use to specify the physical
+    meaning of F_local and g_local.
+
+    Concretely,
+
+               F_{local} w_{contact} \leq g_{local}
 
     Parameters
     ----------
-    robot: openrave.Robot
+    robot: openravepy.Robot
     link_name: string
-        Name of the link at which the contact is attached to.
+        Name of the link, or the end-effect, at which the contact is
+        attached to.
     T_link_contact: (4,4)array
+        Transformation of {contact} in {link}.
     F_local: (m,6)array
-        Constraint at {contact} is Fx <= g.
+        Constraint coefficient. See above.
     g_local: (m,)array
+        Constraint coefficient. See above.
     """
     def __init__(self, robot, attached_name, T_attached_frame, F_local, g_local, dofindices=None):
         super(Contact, self).__init__(robot, attached_name, T_attached_frame, dofindices)

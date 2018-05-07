@@ -160,8 +160,9 @@ def Ad(T):
     mat[3:, :3] = skew(T[:3, 3]).dot(T[:3, :3])
     return mat
 
+
 def compute_Hessians(robot, endlink_name, q_cur, pos_world=None, pos_endlink=None):
-    """
+    """ Compute the Hessians of the robot with respect to its active DOF.
 
     Parameters
     ----------
@@ -181,20 +182,19 @@ def compute_Hessians(robot, endlink_name, q_cur, pos_world=None, pos_endlink=Non
     H_trans: ndarray
     """
     with robot:
-        manip = robot.GetActiveManipulator()
-        arm_indices = manip.GetArmIndices()
-        robot.SetDOFValues(q_cur, manip.GetArmIndices())
+        active_indices = robot.GetActiveDOFIndices()
+        robot.SetDOFValues(q_cur, active_indices)
         link = robot.GetLink(endlink_name)
         if pos_world is None:
             T_world_link = link.GetTransform()
             pos_world = T_world_link.dot(np.r_[pos_endlink, 1])[:3]
-        J_trans = robot.ComputeHessianTranslation(link.GetIndex(), pos_world, arm_indices)
-        J_rot = robot.ComputeHessianAxisAngle(link.GetIndex(), arm_indices)
-    return J_rot, J_trans
+        H_trans = robot.ComputeHessianTranslation(link.GetIndex(), pos_world, active_indices)
+        H_rot = robot.ComputeHessianAxisAngle(link.GetIndex(), active_indices)
+    return H_rot, H_trans
 
 
 def compute_Jacobians(robot, endlink_name, q_cur, pos_world=None, pos_endlink=None):
-    """
+    """ Compute the Jacobians with respect to robot's active DOF.
 
     Parameters
     ----------
@@ -214,13 +214,13 @@ def compute_Jacobians(robot, endlink_name, q_cur, pos_world=None, pos_endlink=No
     J_trans: ndarray
     """
     with robot:
-        manip = robot.GetActiveManipulator()
-        robot.SetDOFValues(q_cur, manip.GetArmIndices())
+        active_indices = robot.GetActiveDOFIndices()
+        robot.SetDOFValues(q_cur, active_indices)
         link = robot.GetLink(endlink_name)
         if pos_world is None:
             T_world_link = link.GetTransform()
             pos_world = T_world_link.dot(np.r_[pos_endlink, 1])[:3]
-        J_trans = robot.ComputeJacobianTranslation(link.GetIndex(), pos_world, manip.GetArmIndices())
-        J_rot = robot.ComputeJacobianAxisAngle(link.GetIndex(), manip.GetArmIndices())
+        J_trans = robot.ComputeJacobianTranslation(link.GetIndex(), pos_world, active_indices)
+        J_rot = robot.ComputeJacobianAxisAngle(link.GetIndex(), active_indices)
     return J_rot, J_trans
 

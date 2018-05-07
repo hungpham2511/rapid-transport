@@ -22,6 +22,10 @@ def case(request):
     return (C1, C2), Cout_exp
 
 
+@pytest.mark.skip(reason="Currently merging convex polygon is not used. "
+                         "This functionality is originally developed to perform constraint pruning."
+                         "However, this function is found to be too slow to be useful when the number"
+                         "of constraints is too high.")
 def test_merge_convex_polygon(case):
     (C1, C2), Cout_exp = case
     C1 = to_float(C1)

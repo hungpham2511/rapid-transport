@@ -1,6 +1,6 @@
 contact_data_dir: ~/Dropbox/ros_data/toppra_application
-contact_profile_dir: ~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/contacts.yaml
-object_profile_dir: ~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/objects.yaml
-trajectory_profile_dir: ~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/trajectories.yaml
-robot_profile_dir: ~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/robots.yaml
-algorithm_profile_dir: ~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/algorithms.yaml
+contact_profile_dir: ~/git/toppra-object-transport/data/contacts.yaml
+object_profile_dir: ~/git/toppra-object-transport/data/objects.yaml
+trajectory_profile_dir: ~/git/toppra-object-transport/data/trajectories.yaml
+robot_profile_dir: ~/git/toppra-object-transport/data/robots.yaml
+algorithm_profile_dir: ~/git/toppra-object-transport/data/algorithms.yaml

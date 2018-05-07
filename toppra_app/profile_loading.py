@@ -1,7 +1,7 @@
 import yaml, os
 
 
-DEFAULT_CONF_FILE = "~/git/hung/Papers/2018-TOPP-RA-application/toppra_application_code/data/conf.yaml"
+DEFAULT_CONF_FILE = "~/git/toppra-object-transport/data/conf.yaml"
 
 
 class Database(object):
@@ -60,6 +60,7 @@ class Database(object):
 
         if obj_id not in selected_table:
             raise ValueError, "Object with id [{:}] not found in table [{:}]".format(obj_id, table)
+
         return selected_table[obj_id]
 
     def insert_profile(self, obj_profile, table):

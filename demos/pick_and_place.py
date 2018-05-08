@@ -1,5 +1,5 @@
 import openravepy as orpy
-import toppra_app, time
+import toppra_app, time, toppra
 import numpy as np
 from toppra_app.utils import expand_and_join
 import yaml, logging
@@ -17,6 +17,7 @@ class PickAndPlaceDemo(object):
             self._scenario = yaml.load(f.read())
         _env_dir = expand_and_join(db.get_model_dir(), self._scenario['env'])
         self._env = orpy.Environment()
+        self._env.SetDebugLevel(0)
         self._env.Load(_env_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
         self._objects = []
@@ -106,11 +107,43 @@ class PickAndPlaceDemo(object):
                                                      constraintmatrix=T_taskframe_world,
                                                      constrainttaskmatrix=T_ee_obj,
                                                      constrainterrorthresh=0.8,
+                                                     execute=False,
                                                      steplength=0.002)
             except orpy.planning_error, e:
                 fail = True
                 logger.warn("Constraint planning fails.")
+                break
 
+            # Shortcutting
+
+            method = "ParabolicSmoother"
+
+            with self.get_robot():
+                trajnew = orpy.RaveCreateTrajectory(self.get_env(), "")
+                trajnew.deserialize(traj1.serialize())
+                # Shortcut
+                params = orpy.Planner.PlannerParameters()
+                params.SetRobotActiveJoints(self.get_robot())
+                params.SetMaxIterations(100)
+                params.SetPostProcessing('', '')
+                # params.SetExtraParameters("""<_postprocessing planner="ParabolicTrajectoryRetimer">
+                # <_nmaxiterations>40</_nmaxiterations>
+                # </_postprocessing>""")
+                # Generate the trajectory
+
+                planner = orpy.RaveCreatePlanner(self.get_env(), method)
+                success = planner.InitPlan(self.get_robot(), params)
+                if success:
+                    status = planner.PlanPath(trajnew)
+
+            logger.info("Method: {:}, nb waypoints: {:d}, duration {:f}\n"
+                        " Playing in 2 sec".format(method, trajnew.GetNumWaypoints(), trajnew.GetDuration()))
+            logger.info("Original traj nb waypoints: {:d}".format(traj1.GetNumWaypoints()))
+
+            # Retime now
+            logger.info("Retime using toppra.")
+            traj1new = toppra.retime_active_joints_kinematics(trajnew, self.get_robot())
+            self.get_robot().GetController().SetPath(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
 

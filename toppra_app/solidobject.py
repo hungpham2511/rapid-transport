@@ -1,7 +1,11 @@
 from .rave_fixed_frame import RaveRobotFixedFrame
 from .articulatedbody import ArticulatedBody
+from .profile_loading import Database
+from .contact import Contact
 import numpy as np
-from .utils import Ad, transform_inv
+from .utils import Ad, transform_inv, expand_and_join
+import logging
+logger = logging.getLogger(__name__)
 
 
 class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
@@ -26,11 +30,67 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         List of active indices. This parameter is deprecated. Now use the active DOFs of
         the robot by default.
     """
-    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None):
+    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None, contact=None, profile="", name="", rave_model_path="", T_object_model=None):
         super(SolidObject, self).__init__(robot, attached_name, T_link_object, dofindices)
         self.m = m
         self.g_world = np.r_[0, 0, -9.8]
         self.I_local = np.array(I_local)
+        self._profile = profile
+        self._name = name
+        self._contact = contact
+        self._robot = robot
+        self._env = robot.GetEnv()
+        self._rave_model_path = rave_model_path
+        self._T_object_model = T_object_model
+        self._T_object_link = np.linalg.inv(T_link_object)
+        self._T_link_object = np.array(T_link_object)
+
+    @staticmethod
+    def init_from_dict(robot, input_dict):
+        """
+        """
+        assert input_dict['object_attach_to'] is not None
+        assert input_dict['contact_attach_to'] is not None
+        contact = Contact.init_from_dict(robot, input_dict)
+        db = Database()
+        object_profile = db.retrieve_profile(input_dict['object_profile'], "object")
+        T_link_object = np.eye(4)
+        T_link_object[:3, 3] = object_profile['position']
+        T_link_object[:3, :3] = object_profile['orientation']
+        T_object_model = np.array(object_profile["T_object_model"], dtype=float)
+        rave_model_path = expand_and_join(db.get_model_dir(), object_profile['rave_model'])
+        solid_object = SolidObject(robot, input_dict['object_attach_to'], T_link_object, object_profile['mass'],
+                                   object_profile['local_inertia'], contact=contact, profile=input_dict['object_profile'],
+                                   name=input_dict['name'], rave_model_path=rave_model_path, T_object_model=T_object_model)
+        return solid_object
+
+    def get_profile(self):
+        return self._profile
+
+    def get_name(self):
+        return self._name
+
+    def get_contact(self):
+        return self._contact
+
+    def get_robot(self):
+        return self._robot
+
+    def get_T_object_link(self):
+        return self._T_object_link
+
+    def load_to_env(self, T_object=None, T_model=None):
+        if not self._env.Load(self._rave_model_path):
+            logger.warn("Unable to load model {:} to rave environment".format(self._rave_model_path))
+
+        rave_body = self._env.GetBodies()[-1]
+        rave_body.SetName(self._name)
+
+        if T_object is not None:
+            T_model = np.dot(T_object, self._T_object_model)
+        rave_body.SetTransform(T_model)
+
+        return rave_body
 
     def compute_inverse_dyn_local(self, q, qd, qdd, dofindices=None):
         """ The net wrench in the local frame {object} as the robot moves.

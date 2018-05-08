@@ -1,6 +1,11 @@
 import numpy as np
 from math import factorial
 from toppra.constraint import CanonicalLinearSecondOrderConstraint
+import os
+
+
+def expand_and_join(path1, path2):
+    return os.path.expanduser(os.path.join(path1, path2))
 
 
 def compute_area_ndim(vertices):

@@ -143,6 +143,7 @@ def test_dynamics_coincide(setup):
     np.testing.assert_allclose(w1[3:], f, atol=1e-8)
     np.testing.assert_allclose(w1[:3], m, atol=1e-8)
 
+
 def test_dynamics_noncoincide(setup):
     robot, ft_name = setup
     link = robot.GetLink(ft_name)
@@ -221,4 +222,3 @@ def test_dynamics_noncoincide_body_frame(setup):
 
     np.testing.assert_allclose(w1[3:], f_body, atol=1e-8)
     np.testing.assert_allclose(w1[:3], m_body, atol=1e-8)
-

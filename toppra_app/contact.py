@@ -1,6 +1,7 @@
 import numpy as np
-from .utils import Ad
+from .utils import Ad, expand_and_join
 from .rave_fixed_frame import RaveRobotFixedFrame
+from .profile_loading import Database
 
 
 class Contact(RaveRobotFixedFrame):
@@ -28,10 +29,26 @@ class Contact(RaveRobotFixedFrame):
     g_local: (m,)array
         Constraint coefficient. See above.
     """
-    def __init__(self, robot, attached_name, T_attached_frame, F_local, g_local, dofindices=None):
+    def __init__(self, robot, attached_name, T_attached_frame, F_local, g_local, dofindices=None, profile=""):
         super(Contact, self).__init__(robot, attached_name, T_attached_frame, dofindices)
         self.F_local = F_local
         self.g_local = g_local
+        self._profile = profile
+
+    @staticmethod
+    def init_from_dict(robot, input_dict):
+        db = Database()
+        contact_profile = db.retrieve_profile(input_dict['contact_profile'], "contact")
+        with np.load(expand_and_join(db.get_contact_data_dir(), contact_profile['constraint_coeffs_file'])) as f:
+            F = f['A']
+            g = f['b']
+        T_link_contact = np.eye(4)
+        T_link_contact[:3, 3] = contact_profile['position']
+        T_link_contact[:3, :3] = contact_profile['orientation']
+        return Contact(robot, input_dict['contact_attach_to'], T_link_contact, F, g, profile=input_dict['contact_profile'])
+
+    def get_profile(self):
+        return self._profile
 
     def get_constraint_coeffs_local(self):
         return self.F_local, self.g_local

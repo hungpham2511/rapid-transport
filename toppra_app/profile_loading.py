@@ -1,7 +1,10 @@
 import yaml, os
 
 
-DEFAULT_CONF_FILE = "~/git/toppra-object-transport/data/conf.yaml"
+# This variable should be set as an environment variable
+TOPPRA_APP_DATA_DIR = "~/git/toppra-object-transport/data"
+TOPPRA_APP_MODEL_DIR = "~/git/toppra-object-transport/models"
+DEFAULT_CONF_FILE = os.path.join(TOPPRA_APP_DATA_DIR, "conf.yaml")
 
 
 class Database(object):
@@ -105,3 +108,12 @@ class Database(object):
         """
         return self.options['contact_data_dir']
 
+    def get_data_dir(self):
+        """ Return the data directory of toppra_app.
+        """
+        return TOPPRA_APP_DATA_DIR
+
+    def get_model_dir(self):
+        """ Return the model directory of toppra_app.
+        """
+        return TOPPRA_APP_MODEL_DIR

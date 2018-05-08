@@ -1,6 +1,9 @@
 
 # NOTE
-# rave_model: use only for collision checking.
+#rave_model: use only for collision checking.
+
+#position and orientation are of the transformation of the object in
+# the manipulator frame.
 
 kindlebox_light:
   description: A kindle package box, padded with an acrylic piece inside (for added weight).
@@ -17,6 +20,11 @@ kindlebox_light:
     - [ 1.535e-4, 0,        0       ]
     - [ 0,        8.879e-5, 0       ]
     - [ 0,        0,        2.228e-4]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
 
 kindlebox:
   description: A kindle package box, padded with two small aluminium pieces and an acrylic piece inside (for added weight).
@@ -33,6 +41,11 @@ kindlebox:
     - [ 3.311e-4, 0,        0       ]
     - [ 0,        8.811e-4, 0       ]
     - [ 0,        0,        1.162e-3]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
 
 small_alum_block:
   description: Small silver aluminium block.
@@ -111,3 +124,26 @@ heavy_alum_2:
     - [  7.05000000e-05,   0.00000000e+00,   0.00000000e+00]
     - [  0.00000000e+00,   38.8000000e-05,   0.00000000e+00]
     - [  0.00000000e+00,   0.00000000e+00,   45.2620833e-05]
+
+
+kindlebox_light_fortesting:
+  description: A kindle package box, padded with an acrylic piece inside (for added weight).
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/kindle_box.xml
+  position: [0, 0, 9.080e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, 1, 0]
+    - [0, 0, 1]
+  mass: 0.2103
+  local_inertia:
+    - [ 1.535e-4, 0,        0       ]
+    - [ 0,        8.879e-5, 0       ]
+    - [ 0,        0,        2.228e-4]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0]
+    - [0, 0, 0, 1]
+

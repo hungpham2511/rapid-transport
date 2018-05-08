@@ -4,7 +4,7 @@ import openravepy as orpy
 import numpy as np
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def object_fixture():
     env = orpy.Environment()
     env.Load('data/lab1.env.xml')

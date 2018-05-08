@@ -3,6 +3,7 @@ import numpy as np
 import toppra_app
 import openravepy as orpy
 
+
 @pytest.fixture()
 def fixture():
     env = orpy.Environment()

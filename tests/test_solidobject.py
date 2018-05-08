@@ -5,7 +5,7 @@ from toppra_app.utils import compute_Hessians, compute_Jacobians
 import numpy as np
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def setup():
     env = orpy.Environment()
     # env.Load('../models/denso_ft_gripper_with_base.robot.xml')
@@ -16,6 +16,7 @@ def setup():
     robot.SetActiveDOFs(active_indices)
     ft_name = 'wam6'
     yield robot, ft_name
+    env.Destroy()
 
 
 @pytest.mark.parametrize("q0", [np.zeros(6), np.r_[1, 0, 1, 0, 1, 0]])

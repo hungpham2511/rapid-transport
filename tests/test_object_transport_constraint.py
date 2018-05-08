@@ -10,7 +10,7 @@ import pytest
 import toppra_app
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def setup():
     env = orpy.Environment()
     # env.Load('../models/denso_ft_gripper_with_base.robot.xml')
@@ -29,7 +29,7 @@ def setup():
               [0, 0, 1, -0.0425 + 25.2e-3 / 2],
               [1, 0, 0, 0.16796 - 25.2e-3 / 2],
               [0, 0, 0, 1]]), np.eye(4)])
-@pytest.mark.parametrize("si", [0, 0.5, 1])
+@pytest.mark.parametrize("si", [0.5, 1])
 def test_basic_contact_obj_coincides(setup, si, T_eo, utest, xtest):
     """Test a simple case where two frames {contact} and {object}
     coincide.

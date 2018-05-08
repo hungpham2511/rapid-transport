@@ -71,9 +71,9 @@ class PickAndPlaceDemo(object):
             manip_name = obj_d["object_attach_to"]
             manip = self.get_robot().SetActiveManipulator(manip_name)
             basemanip = orpy.interfaces.BaseManipulation(self.get_robot())
-            Tstart = obj_d['T_start']
+            Tstart = np.array(obj_d['T_start'])
             logger.debug(Tstart)
-            Tgoal = obj_d['T_goal']
+            Tgoal = np.array(obj_d['T_goal'])
 
             # Check that the starting position can be reached
             T_ee_start = np.dot(Tstart, self.get_object(obj_d['name']).get_T_object_link())
@@ -90,13 +90,27 @@ class PickAndPlaceDemo(object):
             if fail:
                 logger.warn("Breaking from planning loop.")
                 break
-
             traj0 = basemanip.MoveToHandPosition(matrices=[T_ee_start], outputtrajobj=True)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
 
+            # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
+            T_taskframe = np.eye(4)
+            T_taskframe[:3, 3] = Tstart[:3, 3]
+            T_taskframe_world = np.linalg.inv(T_taskframe)
+            T_ee_obj = np.linalg.inv(self.get_object(obj_d['name']).get_T_object_link())
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
-            traj1 = basemanip.MoveToHandPosition(matrices=[T_ee_goal], outputtrajobj=True)
+            try:
+                traj1 = basemanip.MoveToHandPosition(matrices=[T_ee_goal], outputtrajobj=True,
+                                                     constraintfreedoms=[1, 1, 0, 0, 0, 0],
+                                                     constraintmatrix=T_taskframe_world,
+                                                     constrainttaskmatrix=T_ee_obj,
+                                                     constrainterrorthresh=0.8,
+                                                     steplength=0.002)
+            except orpy.planning_error, e:
+                fail = True
+                logger.warn("Constraint planning fails.")
+
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
 

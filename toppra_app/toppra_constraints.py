@@ -41,7 +41,7 @@ def create_object_transporation_constraint(contact, solid_object):
         return contact.get_constraint_coeffs_local()[1]
 
     constraint = toppra.constraint.CanonicalLinearSecondOrderConstraint(
-        inv_dyn, cnst_F, cnst_g)
+        inv_dyn, cnst_F, cnst_g, dof=solid_object.get_robot().GetActiveDOF())
     return constraint
 
 

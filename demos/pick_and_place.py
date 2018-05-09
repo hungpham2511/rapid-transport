@@ -62,7 +62,7 @@ class PickAndPlaceDemo(object):
     def get_qstart(self):
         return self._robot.GetActiveDOFValues()
 
-    def run(self):
+    def run(self, method="ParabolicSmoother"):
         """ Run the demo.
         """
         q_current = self.get_qstart()
@@ -115,24 +115,16 @@ class PickAndPlaceDemo(object):
                 break
 
             # Shortcutting
-
-            method = "ParabolicSmoother"
-
             with self.get_robot():
                 trajnew = orpy.RaveCreateTrajectory(self.get_env(), "")
                 trajnew.deserialize(traj1.serialize())
-                # Shortcut
                 params = orpy.Planner.PlannerParameters()
                 params.SetRobotActiveJoints(self.get_robot())
                 params.SetMaxIterations(100)
                 params.SetPostProcessing('', '')
-                # params.SetExtraParameters("""<_postprocessing planner="ParabolicTrajectoryRetimer">
-                # <_nmaxiterations>40</_nmaxiterations>
-                # </_postprocessing>""")
-                # Generate the trajectory
-
                 planner = orpy.RaveCreatePlanner(self.get_env(), method)
                 success = planner.InitPlan(self.get_robot(), params)
+
                 if success:
                     status = planner.PlanPath(trajnew)
 
@@ -142,13 +134,16 @@ class PickAndPlaceDemo(object):
 
             # Retime now
             logger.info("Retime using toppra.")
-            traj1new = toppra.retime_active_joints_kinematics(trajnew, self.get_robot())
+            contact = self.get_object(obj_d['name']).get_contact()
+            contact_constraint = toppra_app.create_object_transporation_constraint(contact, self.get_object(obj_d['name']))
+            traj1new = toppra.retime_active_joints_kinematics(
+                trajnew, self.get_robot(), additional_constraints=[contact_constraint])
+
             self.get_robot().GetController().SetPath(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
 
-            time.sleep(2)
-
+        time.sleep(2)
         return not fail
 
 

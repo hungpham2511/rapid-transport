@@ -196,6 +196,23 @@ suctioncup_kindlebox:
   position: [0, 0, 0]
   raw_data: [suctioncup_kindlebox1, suctioncup_kindlebox2]
   volume: 0.13294794
+suctioncup_kindlebox2_fortesting:
+  N_faces: 489214
+  N_vertices: 4879
+  attached_to_manipulator: denso_ft_sensor
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  description: Contact between the suction cup and the kindle box. Very light interactions
+    are recorded.
+  id: suctioncup_kindlebox2
+  constraint_coeffs_file: suctioncup_kindlebox2_467795874a.npz
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [suctioncup_kindlebox3, suctioncup_kindlebox4]
+  volume: 0.13294794
+
 suctioncup_kindlebox2:
   N_faces: 489214
   N_vertices: 4879

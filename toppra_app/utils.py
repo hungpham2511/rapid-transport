@@ -2,6 +2,25 @@ import numpy as np
 from math import factorial
 from toppra.constraint import CanonicalLinearSecondOrderConstraint
 import os
+import matplotlib.pyplot as plt
+
+def preview_plot(args):
+    """ Preview data tuples given in args.
+
+    Each args is (points, marker, size)
+    """
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].set_title('tau_x vs tau_z')
+    axs[0, 1].set_title('tau_y vs tau_z')
+    axs[1, 0].set_title('f_x vs f_z')
+    axs[1, 1].set_title('f_y vs f_z')
+    for ws_all, marker, size in args:
+        axs[0, 0].scatter(ws_all[:, 0], ws_all[:, 2], marker=marker, s=size)
+        axs[0, 1].scatter(ws_all[:, 1], ws_all[:, 2], marker=marker, s=size)
+
+        axs[1, 0].scatter(ws_all[:, 3], ws_all[:, 5], marker=marker, s=size)
+        axs[1, 1].scatter(ws_all[:, 4], ws_all[:, 5], marker=marker, s=size)
+    plt.show()
 
 
 def expand_and_join(path1, path2):

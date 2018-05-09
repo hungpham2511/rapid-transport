@@ -1,11 +1,14 @@
 import toppra_app
 import pytest
+import logging
+
+logging.basicConfig(level="DEBUG")
 
 
-@pytest.fixture
-def contact_fixture(envcage):
+@pytest.fixture(params=["suctioncup_kindlebox2_fortesting"])
+def contact_fixture(envcage, request):
     robot = envcage.GetRobots()[0]
-    contact = toppra_app.Contact.init_from_profile_id(robot, "suctioncup_skirt_kindlebox")
+    contact = toppra_app.Contact.init_from_profile_id(robot, request.param)
     input_dict = {
         "name": "object1",
         "object_profile": "kindlebox_light",
@@ -16,6 +19,10 @@ def contact_fixture(envcage):
                           [0, 0, 0, 1]]
     }
     solid_object = toppra_app.SolidObject.init_from_dict(robot, input_dict)
+
+    # Remove pre-gen data points
+    contact.F_local = None
+    contact.g_local = None
     yield robot, contact, solid_object
 
 

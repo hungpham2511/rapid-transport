@@ -37,11 +37,12 @@ class Contact(RaveRobotFixedFrame):
         Constraint coefficient. See above.
 
     """
-    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile=""):
+    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile="", raw_data=[]):
         super(Contact, self).__init__(robot, link_name, T_link_contact, dofindices)
         self.F_local = F_local
         self.g_local = g_local
         self._profile = profile
+        self._raw_data = raw_data
 
     @staticmethod
     def init_from_profile_id(robot, profile_id):
@@ -55,13 +56,27 @@ class Contact(RaveRobotFixedFrame):
         """
         db = Database()
         contact_profile = db.retrieve_profile(profile_id, "contact")
-        with np.load(expand_and_join(db.get_contact_data_dir(), contact_profile['constraint_coeffs_file'])) as f:
-            F = f['A']
-            g = f['b']
+        try:
+            with np.load(expand_and_join(db.get_contact_data_dir(), contact_profile['constraint_coeffs_file'])) as f:
+                F = f['A']
+                g = f['b']
+        except KeyError:
+            F = None
+            g = None
+
+        try:
+            raw_data = contact_profile['raw_data']
+        except KeyError:
+            raw_data = []
+
         T_link_contact = np.eye(4)
         T_link_contact[:3, 3] = contact_profile['position']
         T_link_contact[:3, :3] = contact_profile['orientation']
-        return Contact(robot, contact_profile['attached_to_manipulator'], T_link_contact, F, g, profile=profile_id)
+        return Contact(robot, contact_profile['attached_to_manipulator'],
+                       T_link_contact, F, g, profile=profile_id, raw_data=raw_data)
+
+    def get_raw_data(self):
+        return self._raw_data
 
     def get_profile(self):
         return self._profile

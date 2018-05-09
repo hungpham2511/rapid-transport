@@ -13,7 +13,7 @@ def fixture():
     d = {"name": "test",
          "object_profile": "kindlebox_light",
          "object_attach_to": "arm",
-         "contact_profile": "suctioncup_skirt_kindlebox_467795874a",
+         "contact_profile": "test",
          "contact_attach_to": "wam7"}
     yield robot, d
     env.Destroy()
@@ -21,6 +21,6 @@ def fixture():
 
 def test_init_from_dict(fixture):
     robot, dictionary = fixture
-    contact = toppra_app.Contact.init_from_dict(robot, dictionary)
+    contact = toppra_app.Contact.init_from_profile_id(robot, dictionary['contact_profile'])
     assert contact.get_profile() == dictionary['contact_profile']
 

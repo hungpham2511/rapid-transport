@@ -29,23 +29,31 @@ class Contact(RaveRobotFixedFrame):
     g_local: (m,)array
         Constraint coefficient. See above.
     """
-    def __init__(self, robot, attached_name, T_attached_frame, F_local, g_local, dofindices=None, profile=""):
-        super(Contact, self).__init__(robot, attached_name, T_attached_frame, dofindices)
+    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile=""):
+        super(Contact, self).__init__(robot, link_name, T_link_contact, dofindices)
         self.F_local = F_local
         self.g_local = g_local
         self._profile = profile
 
     @staticmethod
-    def init_from_dict(robot, input_dict):
+    def init_from_profile_id(robot, profile_id):
+        """ Initialization from a contact profile id.
+
+        Parameters
+        ----------
+        robot: openravepy.Robot
+            The robot at which this contact attaches to.
+        profile_id: str
+        """
         db = Database()
-        contact_profile = db.retrieve_profile(input_dict['contact_profile'], "contact")
+        contact_profile = db.retrieve_profile(profile_id, "contact")
         with np.load(expand_and_join(db.get_contact_data_dir(), contact_profile['constraint_coeffs_file'])) as f:
             F = f['A']
             g = f['b']
         T_link_contact = np.eye(4)
         T_link_contact[:3, 3] = contact_profile['position']
         T_link_contact[:3, :3] = contact_profile['orientation']
-        return Contact(robot, input_dict['contact_attach_to'], T_link_contact, F, g, profile=input_dict['contact_profile'])
+        return Contact(robot, contact_profile['attached_to_manipulator'], T_link_contact, F, g, profile=profile_id)
 
     def get_profile(self):
         return self._profile

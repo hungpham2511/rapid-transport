@@ -326,7 +326,7 @@ suctioncup_skirt_kindlebox_467795874a:
 test:
   N_faces: 99142
   N_vertices: 1079
-  attached_to_manipulator: denso_ft_sensor
+  attached_to_manipulator: arm
   attached_to_robot: denso_ft_sensor_suction.robot.xml
   constraint_coeffs_file: test.npz
   description: Contact between the suction cup (off) and the aluminium piece.

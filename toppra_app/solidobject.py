@@ -51,7 +51,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         """
         assert input_dict['object_attach_to'] is not None
         assert input_dict['contact_attach_to'] is not None
-        contact = Contact.init_from_dict(robot, input_dict)
+        contact = Contact.init_from_profile_id(robot, input_dict['contact_profile'])
         db = Database()
         object_profile = db.retrieve_profile(input_dict['object_profile'], "object")
         T_link_object = np.array(input_dict["T_link_object"], dtype=float)

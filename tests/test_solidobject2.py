@@ -13,7 +13,7 @@ def object_fixture():
     d = {"name": "test",
          "object_profile": "kindlebox_light_fortesting",
          "object_attach_to": "arm",
-         "contact_profile": "suctioncup_skirt_kindlebox_467795874a",
+         "contact_profile": "test",
          "contact_attach_to": "wam7",
          "T_link_object": [[1,0,0,0], [0, 1, 0, 0], [0, 0, 1, 9.08e-3], [0, 0, 0, 1]]}
 
@@ -56,7 +56,7 @@ def test_init_from_dict_object(object_fixture):
 
 def test_init_from_dict_contact(object_fixture):
     obj, env, d = object_fixture
-    assert obj.get_contact().get_profile() == "suctioncup_skirt_kindlebox_467795874a"
+    assert obj.get_contact().get_profile() == "test"
 
 
 def test_load_to_rave(object_fixture):

@@ -29,6 +29,8 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
     dofindices: list of int, optional
         List of active indices. This parameter is deprecated. Now use the active DOFs of
         the robot by default.
+    contact: optional
+    profile
     """
     def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None, contact=None, profile="", name="", rave_model_path="", T_object_model=None):
         super(SolidObject, self).__init__(robot, attached_name, T_link_object, dofindices)
@@ -47,11 +49,18 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
 
     @staticmethod
     def init_from_dict(robot, input_dict):
-        """
+        """ Initialize from an input dictionary.
+
+        Parameters
+        ----------
+        robot: openravepy.Robot
+        input_dict: dict
         """
         assert input_dict['object_attach_to'] is not None
-        assert input_dict['contact_attach_to'] is not None
-        contact = Contact.init_from_profile_id(robot, input_dict['contact_profile'])
+        try:
+            contact = Contact.init_from_profile_id(robot, input_dict['contact_profile'])
+        except KeyError:
+            contact = None
         db = Database()
         object_profile = db.retrieve_profile(input_dict['object_profile'], "object")
         T_link_object = np.array(input_dict["T_link_object"], dtype=float)

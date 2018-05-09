@@ -51,7 +51,7 @@ class ViewTrajectory(object):
                 self.obj.SetTransform(T_obj)
                 if self.env.CheckCollision(self.robot):
                     print "Robot is in collision at waypoint {:d}!".format(i)
-                time.sleep(0.01)
+                time.sleep(0.001)
         else:
             try:
                 i = int(cmd) - 1

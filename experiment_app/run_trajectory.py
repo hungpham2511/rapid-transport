@@ -10,14 +10,16 @@ if __name__ == '__main__':
     n = rospy.init_node("open_loop")
     parse = argparse.ArgumentParser(description="Run parametrized trajectory.")
     parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=True)
-    parse.add_argument('-e', '--environment', help='Name of the environment. For collision checking during transiting segments only.', required=True)
-    parse.add_argument('-r', '--robot', help='Name of the robot. For collision checking during transiting segments only.', required=True)
+    parse.add_argument('-e', '--environment', help='Name of the environment. For collision checking during transiting segments only.', default="caged_denso_ft_sensor_suction.env.xml")
+    parse.add_argument('-r', '--robot', help='Name of the robot. For collision checking during transiting segments only.', default="denso")
     parse.add_argument('-s', '--sampling', help="Sampling period.", default=0.006667)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
     args = vars(parse.parse_args())
 
+    db = toppra_app.database.Database()
+
     env = orpy.Environment()
-    env.Load(args['environment'])
+    env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), args['environment']))
     robot = env.GetRobot(args['robot'])
     if args['verbose']:
         env.SetViewer('qtosg')

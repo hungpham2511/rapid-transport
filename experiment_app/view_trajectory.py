@@ -42,7 +42,7 @@ class ViewTrajectory(object):
 
         q_samples = path.eval(np.arange(0, path.get_duration(), 0.01))
         if cmd == "q":
-            exit()
+            exit(42)
         elif cmd == "r":
             return True
         elif cmd == "":
@@ -65,17 +65,17 @@ class ViewTrajectory(object):
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser(description="A program for viewing trajectory.")
-    parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=True)
-    parse.add_argument('-e', '--environment', help='Path to the environment.', required=True)
-    parse.add_argument('-r', '--robot_name', help='', required=True)
-    parse.add_argument('-m', '--manip_name', help='Active manipulator', required=True)
-    parse.add_argument('-o', '--object', help='Object specification.', required=True)
-    parse.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=True)
-    parse.add_argument('-T', '--transform', help='T_link_object', required=True)
+    parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False, default="suctioncup_traj1")
+    parse.add_argument('-e', '--environment', help='Path to the environment.', required=False, default="caged_denso_ft_sensor_suction.env.xml")
+    parse.add_argument('-r', '--robot_name', help='', required=False, default="denso")
+    parse.add_argument('-m', '--manip_name', help='Active manipulator', required=False, default="denso_suction_cup")
+    parse.add_argument('-o', '--object', help='Object specification.', required=False, default="kindlebox_light")
+    parse.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")
+    parse.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
     args = vars(parse.parse_args())
 
     view_traj = ViewTrajectory(
-        args['trajectory'], args['environment'], args['robot_name'], args['manip_name'], args['object'], args['attach'], np.array(yaml.load(args['transform']))
+        args['trajectory'], args['environment'], args['robot_name'], args['object'], args['attach'], np.array(yaml.load(args['transform']))
     )
 
     while True:

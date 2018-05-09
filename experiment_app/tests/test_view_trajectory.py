@@ -1,5 +1,6 @@
 from ..view_trajectory import ViewTrajectory
 import numpy as np
+import pytest
 
 
 def test_view_basic():
@@ -15,4 +16,8 @@ def test_view_basic():
     view_traj.run_cmd("")
     view_traj.run_cmd("r")
     view_traj.run_cmd("1")
-    view_traj.run_cmd("q")
+    with pytest.raises(SystemExit) as e:
+        view_traj.run_cmd("q")
+    assert e.type == SystemExit
+    assert e.value.code == 42
+    

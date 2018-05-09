@@ -10,11 +10,6 @@ kindlebox_light:
   attached_to_manipulator: denso_suction_cup
   attached_to_robot: denso_ft_sensor_suction.robot.xml
   rave_model: objects/kindle_box.xml
-  position: [0, 0, 9.080e-3]
-  orientation:
-    - [1, 0, 0]
-    - [0, 1, 0]
-    - [0, 0, 1]
   mass: 0.2103
   local_inertia:
     - [ 1.535e-4, 0,        0       ]
@@ -99,6 +94,11 @@ small_alum_block_2:
     - [  3.82620833e-05,   0.00000000e+00,   0.00000000e+00]
     - [  0.00000000e+00,   1.05840000e-05,   0.00000000e+00]
     - [  0.00000000e+00,   0.00000000e+00,   3.82620833e-05]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
 
 heavy_alum_1:
   description: The heavy aluminium block, attached directly on the suction cup. The COM of the block is direclty below the cup itself.
@@ -115,6 +115,12 @@ heavy_alum_1:
     - [  7.05000000e-05,   0.00000000e+00,   0.00000000e+00]
     - [  0.00000000e+00,   38.8000000e-05,   0.00000000e+00]
     - [  0.00000000e+00,   0.00000000e+00,   45.2620833e-05]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
+
 
 heavy_alum_2:
   description: The heavy aluminium block, attached directly on the suction cup. The COM of the block is direclty below the cup itself.

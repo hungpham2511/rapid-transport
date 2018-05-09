@@ -10,7 +10,7 @@ def setup():
     env.Destroy()
 
 @pytest.mark.parametrize("traj_id", ["suctioncup_traj4", "suctioncup_traj4_f1918e634c"])
-@pytest.mark.parametrize("object_id", ["kindlebox", "small_alum_block"])
+@pytest.mark.parametrize("object_id", ["kindlebox", "small_alum_block", "heavy_alum_1"])
 def test_view_basic(setup, traj_id, object_id):
     env = setup
     view_traj = ViewTrajectory(

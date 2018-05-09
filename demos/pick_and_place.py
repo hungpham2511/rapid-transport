@@ -38,7 +38,7 @@ class PickAndPlaceDemo(object):
     def view(self):
         res = self._env.SetViewer('qtosg')
         time.sleep(0.5)
-        return res
+        return True
 
     def get_env(self):
         return self._env

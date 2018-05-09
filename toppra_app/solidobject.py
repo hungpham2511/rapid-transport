@@ -54,9 +54,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         contact = Contact.init_from_dict(robot, input_dict)
         db = Database()
         object_profile = db.retrieve_profile(input_dict['object_profile'], "object")
-        T_link_object = np.eye(4)
-        T_link_object[:3, 3] = object_profile['position']
-        T_link_object[:3, :3] = object_profile['orientation']
+        T_link_object = np.array(input_dict["T_link_object"], dtype=float)
         T_object_model = np.array(object_profile["T_object_model"], dtype=float)
         rave_model_path = expand_and_join(db.get_model_dir(), object_profile['rave_model'])
         solid_object = SolidObject(robot, input_dict['object_attach_to'], T_link_object, object_profile['mass'],

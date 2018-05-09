@@ -14,7 +14,8 @@ def object_fixture():
          "object_profile": "kindlebox_light_fortesting",
          "object_attach_to": "arm",
          "contact_profile": "suctioncup_skirt_kindlebox_467795874a",
-         "contact_attach_to": "wam7"}
+         "contact_attach_to": "wam7",
+         "T_link_object": [[1,0,0,0], [0, 1, 0, 0], [0, 0, 1, 9.08e-3], [0, 0, 0, 1]]}
 
     obj = toppra_app.SolidObject.init_from_dict(robot, d)
     yield obj, env, d

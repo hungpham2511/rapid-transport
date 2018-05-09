@@ -5,7 +5,8 @@ from .profile_loading import Database
 
 
 class Contact(RaveRobotFixedFrame):
-    """A class representing the contact between the robot an external object.
+    """A class representing the contact between the robot an external
+    object.
 
     Note that the frame {contact} is not necessarily placed at the
     center of the physical contact. It can be anywhere, even floating
@@ -15,6 +16,12 @@ class Contact(RaveRobotFixedFrame):
     Concretely,
 
                F_{local} w_{contact} \leq g_{local}
+
+    This object directly corresponds to the contact profiles in
+    contacts.yaml. This is not true for object profiles in
+    objects.yaml. The key difference is that in the latter, the
+    profile does not specify which link, or manipulator that the
+    object is attached to.
 
     Parameters
     ----------
@@ -28,6 +35,7 @@ class Contact(RaveRobotFixedFrame):
         Constraint coefficient. See above.
     g_local: (m,)array
         Constraint coefficient. See above.
+
     """
     def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile=""):
         super(Contact, self).__init__(robot, link_name, T_link_contact, dofindices)

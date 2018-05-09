@@ -9,14 +9,18 @@ logging.basicConfig(level='DEBUG')
 
 
 class PickAndPlaceDemo(object):
-    def __init__(self, load_path=None):
+    def __init__(self, load_path=None, env=None):
         assert load_path is not None
         db = toppra_app.database.Database()
         _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
             self._scenario = yaml.load(f.read())
         _env_dir = expand_and_join(db.get_model_dir(), self._scenario['env'])
-        self._env = orpy.Environment()
+        if env is None:
+            self._env = orpy.Environment()
+        else:
+            self._env = env
+            self._env.Reset()
         self._env.SetDebugLevel(0)
         self._env.Load(_env_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])

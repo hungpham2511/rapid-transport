@@ -10,12 +10,11 @@ logging.basicConfig(level="DEBUG")
 @pytest.fixture(scope="module", params=[
     ("scenarios/test0.scenario.yaml", "denso")
 ])
-def setup_demo(request):
+def setup_demo(setup, request):
     scene_name, robot_name = request.param
-    demo = PickAndPlaceDemo(scene_name)
+    demo = PickAndPlaceDemo(scene_name, env=setup)
     assert demo.view()
     yield demo, robot_name
-    demo.get_env().Destroy()
 
 
 def test_init(setup_demo):

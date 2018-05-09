@@ -12,6 +12,17 @@ import openravepy as orpy
 from datetime import datetime
 
 
+class ContactSimplifier(object):
+    """ A class that simplify wrench.
+    """
+    def __init__(self, robot, contact, solid_object):
+        pass
+
+    def simplify(self):
+        new_contact = None
+        return new_contact
+
+
 def preview_plot(args):
     """ Preview data tuples given in args.
     """

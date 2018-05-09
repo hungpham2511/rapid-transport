@@ -6,11 +6,12 @@ import numpy as np
 
 class ViewTrajectory(object):
 
-    def __init__(self, traj_id, env_dir, robot_name, object_id, link_name, T_link_object):
+    def __init__(self, env, traj_id, env_dir, robot_name, object_id, link_name, T_link_object):
         self.db = toppra_app.database.Database()
         self.traj_profile = self.db.retrieve_profile(traj_id, "trajectory")
         obj_profile = self.db.retrieve_profile(object_id, "object")
-        self.env = orpy.Environment()
+        self.env = env
+        self.env.Reset()
         self.env.Load(toppra_app.utils.expand_and_join(self.db.get_model_dir(), env_dir))
         self.robot = self.env.GetRobot(robot_name)
         assert self.robot is not None
@@ -33,10 +34,8 @@ class ViewTrajectory(object):
             file_ = np.load(
                 os.path.join(self.db.get_trajectory_data_dir(), self.traj_profile['waypoints_npz']))
             path = toppra.SplineInterpolator(file_['t_waypoints'], file_['waypoints'])
-            N_waypoints = len(file_['t_waypoints'])
         elif 't_waypoints' in self.traj_profile:
             path = toppra.SplineInterpolator(self.traj_profile['t_waypoints'], self.traj_profile['waypoints'])
-            N_waypoints = len(self.traj_profile['t_waypoints'])
         else:
             raise IOError, "Waypoints not found!"
 
@@ -74,7 +73,9 @@ if __name__ == '__main__':
     parse.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
     args = vars(parse.parse_args())
 
-    view_traj = ViewTrajectory(
+    env = orpy.Environment()
+
+    view_traj = ViewTrajectory(env,
         args['trajectory'], args['environment'], args['robot_name'], args['object'], args['attach'], np.array(yaml.load(args['transform']))
     )
 

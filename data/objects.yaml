@@ -51,6 +51,7 @@ small_alum_block:
   description: Small silver aluminium block.
   attached_to_manipulator: denso_suction_cup
   attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/tall_alum.xml
   position: [0, 0, 12.5e-3]
   orientation:
     - [1, 0, 0]
@@ -61,6 +62,12 @@ small_alum_block:
     - [  3.82620833e-05,   0.00000000e+00,   0.00000000e+00]
     - [  0.00000000e+00,   1.05840000e-05,   0.00000000e+00]
     - [  0.00000000e+00,   0.00000000e+00,   3.82620833e-05]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
+
 
 tall_alum_block:
   description: Two small silver aluminium blocks, attached together. The frame is defined such that the Z-axis is pointing along the long edge of the block, while X, and Y-axes are perpendicular to the faces.

@@ -5,8 +5,7 @@ import argparse, os, time
 import openravepy as orpy
 import matplotlib.pyplot as plt
 
-
-if __name__ == '__main__':
+def main():
     parse = argparse.ArgumentParser(description="A program for parametrizing trajectory. Output trajectory"
                                                 "id is generated from the ids of contact, object, robot and"
                                                 "algorithm respectively using a hash function. Hence, if two"
@@ -150,3 +149,5 @@ if __name__ == '__main__':
         exit()
 
 
+if __name__ == '__main__':
+    main()

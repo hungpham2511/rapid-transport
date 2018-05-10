@@ -1,3 +1,14 @@
+nan:
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: contact1.npz
+  description: An empty contact. Use when you want to consider kinematic constraint only.
+  id: nan
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  constraint_coeffs_file: nan.npz
 contact1:
   N_faces: 550725
   N_vertices: 4968

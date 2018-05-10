@@ -58,6 +58,13 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
     def init_from_dict(robot, input_dict):
         """ Initialize from an input dictionary.
 
+        The input dictionary has to define the following fields:
+        - contact_profile (optional)
+        - object_profile
+        - object_attach_to
+        - T_link_object
+        - name
+
         Parameters
         ----------
         robot: openravepy.Robot
@@ -78,7 +85,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
                                    name=input_dict['name'], rave_model_path=rave_model_path, T_object_model=T_object_model)
         return solid_object
 
-    def get_profile(self):
+    def get_profile_id(self):
         return self._profile_id
 
     def get_name(self):
@@ -94,6 +101,17 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         return self._T_object_link
 
     def load_to_env(self, T_object=None, T_model=None):
+        """ Load this object to its attached openrave environment.
+
+        Parameters
+        ---------
+        T_object: (4,4)array
+            Transformation of object in the world frame
+
+        Returns
+        -------
+        rave_body: openravepy.KinBody
+        """
         if not self._env.Load(self._rave_model_path):
             logger.warn("Unable to load model {:} to rave environment".format(self._rave_model_path))
 

@@ -18,7 +18,7 @@ if __name__ == '__main__':
     env = orpy.Environment()
 
     view_traj = toppra_app.ViewTrajectory(env,
-        args['trajectory'], args['environment'], args['robot_name'], args['object'], args['attach'], np.array(yaml.load(args['transform']))
+        args['trajectory'], args['environment'], args['robot_name'], args['object'], args['attach'], np.array(yaml.load(args['transform'])), dt=6.67e-3
     )
 
     while True:

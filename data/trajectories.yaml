@@ -126,6 +126,24 @@ suctioncup_traj4_f1918e634c: {attached_to_robot: denso_ft_sensor_suction.robot.x
   id: suctioncup_traj4_f1918e634c, reparam_contact: suctioncup_804cb332f3, reparam_object: heavy_alum_1,
   reparam_robot: suctioncup1_slow, reparam_trajectory: suctioncup_traj4, reparametrized: true,
   waypoints_npz: suctioncup_traj4_f1918e634c.npz}
+suctioncup_traj5a:
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  description: An simple trajectory, move from right to left.
+  reparametrized: false
+  t_waypoints: [0, 0.3333, 0.66666, 1.0]
+  waypoints:
+  - [0.5, 0.78, 0.78, 0, 0, 0]
+  - [0.2, 0.78, 0.8, 0, 0.0, 0.1]
+  - [-0.2, 0.78, 0.78, 0, 0.0, -0.0]
+  - [-0.5, 0.78, 0.78, 0, 0, -0.1]
+suctioncup_traj5a_117979176b: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
+  id: suctioncup_traj5a_117979176b, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
+  reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
+  reparametrized: true, waypoints_npz: suctioncup_traj5a_117979176b.npz}
+suctioncup_traj5a_f563e7a3c9: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
+  id: suctioncup_traj5a_f563e7a3c9, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
+  reparam_object: kindlebox_light, reparam_robot: suctioncup1_slow, reparam_trajectory: suctioncup_traj5a,
+  reparametrized: true, waypoints_npz: suctioncup_traj5a_f563e7a3c9.npz}
 traj1:
   attached_to_robot: denso_ft_sensor_gripper.robot.xml
   description: Simple experiment I did sometime ago.

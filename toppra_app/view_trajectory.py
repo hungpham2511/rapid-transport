@@ -6,7 +6,8 @@ import numpy as np
 
 class ViewTrajectory(object):
 
-    def __init__(self, env, traj_id, env_dir, robot_name, object_id, link_name, T_link_object):
+    def __init__(self, env, traj_id, env_dir, robot_name, object_id, link_name, T_link_object, dt=6.67e-4):
+        self.dt = dt
         self.db = toppra_app.database.Database()
         self.traj_profile = self.db.retrieve_profile(traj_id, "trajectory")
         obj_profile = self.db.retrieve_profile(object_id, "object")
@@ -51,7 +52,7 @@ class ViewTrajectory(object):
                 self.obj.SetTransform(T_obj)
                 if self.env.CheckCollision(self.robot):
                     print "Robot is in collision at waypoint {:d}!".format(i)
-                time.sleep(0.001)
+                time.sleep(self.dt)
         else:
             try:
                 i = int(cmd) - 1

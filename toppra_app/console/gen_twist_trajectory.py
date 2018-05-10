@@ -44,7 +44,7 @@ def main(env=None):
         print("Exit without saving!")
     else:
         np.savez(os.path.join(db.get_trajectory_data_dir(), traj_param_id+".npz"),
-                 t_waypoints=np.linspace(0, 5, traj_array.shape[0]),
+                 t_waypoints=np.linspace(0, 1, traj_array.shape[0]),
                  waypoints=traj_array)
         traj_profile = {
             "id": traj_param_id,

@@ -34,11 +34,6 @@ def main():
     algorithm_profile = db.retrieve_profile(args['algorithm'], "algorithm")
     robot_profile = db.retrieve_profile(args['robot'], "robot")
 
-    # check that all input use the same robot model
-    assert contact_profile['attached_to_robot'] == robot_profile['robot_model'], "Supplied contact and robot must share the same robot model!"
-    assert object_profile['attached_to_robot'] == robot_profile['robot_model'], "Supplied object and robot must share the same robot model!"
-    assert traj_profile['attached_to_robot'] == robot_profile['robot_model'], "Supplied trajectory and robot must share the same robot model!"
-
     env = orpy.Environment()
     env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), robot_profile['robot_model']))
     robot = env.GetRobots()[0]
@@ -74,7 +69,17 @@ def main():
         pc_velocity.set_discretization_type(0)
         pc_accel.set_discretization_type(0)
 
-    path = toppra.SplineInterpolator(traj_profile['t_waypoints'], traj_profile['waypoints'])
+    # Get path
+    if "waypoints_npz" in traj_profile:
+        file_ = np.load(os.path.join(db.get_trajectory_data_dir(), traj_profile['waypoints_npz']))
+        ts_waypoints = file_['t_waypoints']
+        waypoints = file_['waypoints']
+    elif "t_waypoints" in traj_profile:
+        ts_waypoints = traj_profile['t_waypoints']
+        waypoints = traj_profile['waypoints']
+    else:
+        raise IOError, "Waypoints not found in trajectory {:}".format(traj_profile['id'])
+    path = toppra.SplineInterpolator(ts_waypoints, waypoints)
     ss = np.linspace(0, path.get_duration(), algorithm_profile['N'] + 1)
 
     instance = toppra.algorithm.TOPPRA([pc_accel, pc_velocity, pc_object_trans], path, ss,
@@ -134,7 +139,6 @@ def main():
 
         traj_param_profile = {
             'id': traj_param_id,
-            'attached_to_robot': traj_profile['attached_to_robot'],
             'reparametrized': True,
             'reparam_trajectory': args['trajectory'],
             'reparam_object': args['object'],

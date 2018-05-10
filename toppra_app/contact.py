@@ -23,6 +23,10 @@ class Contact(RaveRobotFixedFrame):
     profile does not specify which link, or manipulator that the
     object is attached to.
 
+    A contact can contain non-empty `raw_data` field. This contact is
+    called raw. Often, a contact of this kind needs to be simplifed
+    with `ContactSimplifier` before it can be used.
+
     Parameters
     ----------
     robot: openravepy.Robot
@@ -35,6 +39,11 @@ class Contact(RaveRobotFixedFrame):
         Constraint coefficient. See above.
     g_local: (m,)array
         Constraint coefficient. See above.
+    dofindices: THIS IS DEPRECEATED
+    profile_id: str
+        Id of the profile that this contact is loaded from.
+    raw_data: list
+        List of raw data file names.
 
     """
     def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile_id="", raw_data=[]):
@@ -76,7 +85,10 @@ class Contact(RaveRobotFixedFrame):
                        T_link_contact, F, g, profile_id=profile_id, raw_data=raw_data)
 
     def clone(self):
-        return Contact(self.robot, self._attached_name, self.T_link_contact, self.F_local, self.g_local, profile_id=self._profile_id)
+        """ Return a cloned contact object.
+        """
+        return Contact(self.robot, self._attached_name, self.T_link_contact,
+                       self.F_local, self.g_local, profile_id=self._profile_id)
 
     def get_raw_data(self):
         return self._raw_data

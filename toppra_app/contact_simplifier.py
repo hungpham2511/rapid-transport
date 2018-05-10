@@ -13,12 +13,20 @@ class ContactSimplifier(object):
     """A class implementing Guided Polyhedral Expansion algorithm for
     simplifying contacts.
 
+    The input contact must be raw.
+
     Parameters
     ----------
     robot: openravepy.Robot
     contact: Contact
+        An input contact object, which is raw. This mean it has to
+        have a non-empty `raw_data` field.
     solid_object: SolidObject
-
+    N_samples: int, optional
+        Number of samples to generate from the object dynamics.
+    N_vertices: int, optional
+        Number of maximum vertices.
+    verbose: bool, optional
     """
     def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False):
         self._N_samples = N_samples
@@ -47,7 +55,12 @@ class ContactSimplifier(object):
         self._contact.g_local = g
 
     def simplify(self, verbose=False):
+        """ Simplify contact.
 
+        Returns
+        -------
+        new_contact: Contact
+        """
         # Sample points
         logger.info("Start sampling")
         ws_thin = []
@@ -109,7 +122,7 @@ class ContactSimplifier(object):
                 ax.scatter(self._ws_all[:, i], self._ws_all[:, j], c='C0', alpha=0.5, s=10)
                 ax.scatter(ws_thin[:, i], ws_thin[:, j], marker='x', c='C1', zorder=10, s=50)
                 ax.plot(vertices[:, i], vertices[:, j], c='C2')
-            timer = fig.canvas.new_timer( interval=3000)  # creating a timer object and setting an interval of 3000 milliseconds
+            timer = fig.canvas.new_timer(interval=3000)  # creating a timer object and setting an interval of 3000 milliseconds
             timer.start()
             timer.add_callback(lambda : plt.close())
             plt.show()

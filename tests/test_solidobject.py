@@ -6,17 +6,13 @@ import numpy as np
 
 
 @pytest.fixture(scope="module")
-def setup():
-    env = orpy.Environment()
-    # env.Load('../models/denso_ft_gripper_with_base.robot.xml')
-    env.Load("data/lab1.env.xml")
-    robot = env.GetRobots()[0]
+def setup(envlab1):
+    robot = envlab1
     manip = robot.GetActiveManipulator()
     active_indices = range(6)
     robot.SetActiveDOFs(active_indices)
     ft_name = 'wam6'
     yield robot, ft_name
-    env.Destroy()
 
 
 @pytest.mark.parametrize("q0", [np.zeros(6), np.r_[1, 0, 1, 0, 1, 0]])

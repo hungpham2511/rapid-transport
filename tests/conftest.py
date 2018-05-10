@@ -19,6 +19,7 @@ def envlab1(setup):
     robot.SetActiveDOFs(range(6))
     yield robot
 
+
 @pytest.fixture(scope="module")
 def envcage(setup):
     env = setup

@@ -5,8 +5,9 @@ import numpy as np
 
 
 @pytest.fixture(scope="module")
-def object_fixture():
-    env = orpy.Environment()
+def object_fixture(setup):
+    env = setup
+    env.Reset()
     env.Load('data/lab1.env.xml')
     robot = env.GetRobots()[0]
     robot.SetActiveDOFs(range(6))
@@ -19,7 +20,6 @@ def object_fixture():
 
     obj = toppra_app.SolidObject.init_from_dict(robot, d)
     yield obj, env, d
-    env.Destroy()
 
 
 def test_init_from_dict(object_fixture):

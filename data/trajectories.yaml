@@ -166,3 +166,5 @@ traj1_easy:
   - [-0.2, 0.78, 0.78, 0, 0.2, -0.3]
   - [0.2, 0.78, 0.8, 0, 0.0, 0.2]
   - [0.5, 0.78, 0.78, 0, 0, 0]
+twist_916049fa08: {id: twist_916049fa08, max_angle: '0.1', reparametrized: false,
+  waypoints_npz: twist_916049fa08.npz}

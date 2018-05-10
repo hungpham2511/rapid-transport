@@ -7,6 +7,7 @@ def setup():
     env = orpy.Environment()
     yield env
     env.Destroy()
+    orpy.RaveDestroy()
 
 
 @pytest.fixture(scope="module")

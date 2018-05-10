@@ -1,4 +1,4 @@
-import pytest, time
+import pytest, time, sys
 import toppra_app
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,14 +30,26 @@ def test_basic(envcage, qinit):
     for i in range(traj_array.shape[0] - 1):
         assert np.linalg.norm(traj_array[i + 1] - traj_array[i]) > 1e-5
 
-    for q in traj_array:
-        robot.SetActiveDOFValues(q)
-        time.sleep(0.1)
+    # for q in traj_array:
+    #     robot.SetActiveDOFValues(q)
+    #     time.sleep(0.1)
 
-    plt.plot(traj_array)
-    fig = plt.gcf()
-    timer = fig.canvas.new_timer( interval=3000)  # creating a timer object and setting an interval of 3000 milliseconds
-    timer.start()
-    timer.add_callback(lambda : plt.close())
-    plt.show()
+    # plt.plot(traj_array)
+    # fig = plt.gcf()
+    # timer = fig.canvas.new_timer(interval=2000)  # creating a timer object and setting an interval of 3000 milliseconds
+    # timer.start()
+    # timer.add_callback(lambda : plt.close())
+    # plt.title("Joint values")
+    # plt.show()
+
+
+@pytest.mark.console
+def test_gen_twist_console(monkeypatch, setup):
+    env = setup
+    # path argv and raw_input
+    monkeypatch.setattr(sys, "argv", ["", '-q', "[0, 1, 1, 0, 0, 0]"])
+    monkeypatch.setattr("__builtin__.raw_input", lambda s: "abc")
+    toppra_app.console.gen_twist_main(env)
+
+
 

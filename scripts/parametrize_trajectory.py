@@ -1,37 +1,9 @@
-import toppra, toppra_app, hashlib
+import toppra, toppra_app, hashlib, yaml
 import toppra.algorithm
 import numpy as np
 import argparse, os, time
 import openravepy as orpy
 import matplotlib.pyplot as plt
-
-
-def create_object_transporation_constraint(contact, solid_object):
-    """
-
-    Parameters
-    ----------
-    contact: Contact
-    solid_object: SolidObject
-
-    Returns
-    -------
-    constraint:
-
-    """
-    def inv_dyn(q, qd, qdd):
-        T_contact = contact.compute_frame_transform(q)
-        wrench_contact = solid_object.compute_inverse_dyn(q, qd, qdd, T_contact)
-        return wrench_contact
-
-    def cnst_F(q):
-        return contact.get_constraint_coeffs_local()[0]
-
-    def cnst_g(q):
-        return contact.get_constraint_coeffs_local()[1]
-
-    constraint = toppra.constraint.CanonicalLinearSecondOrderConstraint(inv_dyn, cnst_F, cnst_g)
-    return constraint
 
 
 if __name__ == '__main__':
@@ -42,8 +14,10 @@ if __name__ == '__main__':
                                                 "will be similar.")
     parse.add_argument('-c', '--contact', help='Id of the contact to be simplified', required=True)
     parse.add_argument('-o', '--object', help='Id of the object to transport', required=True)
-    parse.add_argument('-r', '--robot', help='Robot specification.', required=True)
-    parse.add_argument('-a', '--algorithm', help='Algorithm specification.', required=False)
+    parse.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")
+    parse.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
+    parse.add_argument('-r', '--robot', help='Robot specification.', required=False, default="suctioncup1")
+    parse.add_argument('-l', '--algorithm', help='Algorithm specification.', default="topp_fast")
     parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
     args = vars(parse.parse_args())
@@ -67,31 +41,20 @@ if __name__ == '__main__':
     assert traj_profile['attached_to_robot'] == robot_profile['robot_model'], "Supplied trajectory and robot must share the same robot model!"
 
     env = orpy.Environment()
-    env.Load('models/' + robot_profile['robot_model'])
+    env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), robot_profile['robot_model']))
     robot = env.GetRobots()[0]
     manip = robot.GetManipulator(robot_profile['manipulator'])
     arm_indices = manip.GetArmIndices()
 
-    T_object = np.eye(4)
-    T_object[:3, 3] = object_profile['position']
-    T_object[:3, :3] = object_profile['orientation']
+    T_object = np.array(yaml.load(args['transform']), dtype=float)
     solid_object = toppra_app.SolidObject(robot, object_profile['attached_to_manipulator'],
                                           T_object,
                                           object_profile['mass'],
                                           np.array(object_profile['local_inertia'], dtype=float),
                                           dofindices=arm_indices)
+    contact = toppra_app.Contact.init_from_profile_id(robot, args['contact'])
 
-    contact_data_file = np.load(os.path.join(db.get_contact_data_dir(), contact_profile['constraint_coeffs_file']))
-    A = contact_data_file['A']  # constraints have the form A x <= b
-    b = contact_data_file['b']
-
-    T_contact = np.eye(4, dtype=float)
-    T_contact[:3, 3] = contact_profile['position']
-    T_contact[:3, :3] = contact_profile['orientation']
-    contact = toppra_app.Contact(robot, contact_profile['attached_to_manipulator'],
-                                 T_contact, A, b, dofindices=arm_indices)
-
-    pc_object_trans = create_object_transporation_constraint(contact, solid_object)
+    pc_object_trans = toppra_app.create_object_transporation_constraint(contact, solid_object)
     if algorithm_profile['interpolate_dynamics']:
         pc_object_trans.set_discretization_type(1)
     else:

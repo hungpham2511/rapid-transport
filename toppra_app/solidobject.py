@@ -18,7 +18,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
     Parameters
     ----------
     robot: openrave.Robot
-    link_name: str
+    _attached_name: str
         Name of the link the object is attached to.
     T_link_object: (4,4)array
         Transformation matrix from {link} to {object}.

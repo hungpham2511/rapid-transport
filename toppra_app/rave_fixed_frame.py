@@ -21,13 +21,13 @@ class RaveRobotFixedFrame(object):
         link = robot.GetLink(attached_name)
         manip = robot.GetManipulator(attached_name)
         if link is None and manip is not None:
-            self.link_name = manip.GetEndEffector().GetName()
+            self._attached_name = manip.GetEndEffector().GetName()
             T_world_ee = manip.GetTransform()
             T_world_frame = T_world_ee.dot(T_attached_frame)
             T_world_link = manip.GetEndEffector().GetTransform()
             self.T_link_contact = transform_inv(T_world_link).dot(T_world_frame)
         elif link is not None and manip is None:
-            self.link_name = attached_name
+            self._attached_name = attached_name
             self.T_link_contact = T_attached_frame
         else:
             raise ValueError, "[{:}] is not a link name or manipulator name.".format(attached_name)
@@ -55,7 +55,7 @@ class RaveRobotFixedFrame(object):
             dofindices = self.dofindices
         with self.robot:
             self.robot.SetActiveDOFValues(q)
-            link = self.robot.GetLink(self.link_name)
+            link = self.robot.GetLink(self._attached_name)
             T_world_link = link.GetTransform()
             T_world_contact = T_world_link.dot(self.T_link_contact)
         return T_world_contact
@@ -77,8 +77,8 @@ class RaveRobotFixedFrame(object):
         if dofindices is None:
             dofindices = self.dofindices
         p_endlink = self.T_link_contact[:3, 3]
-        J_rot, J_tran = compute_Jacobians(self.robot, self.link_name, q_cur=q, pos_endlink=p_endlink)
-        H_rot, H_tran = compute_Hessians(self.robot, self.link_name, q_cur=q, pos_endlink=p_endlink)
+        J_rot, J_tran = compute_Jacobians(self.robot, self._attached_name, q_cur=q, pos_endlink=p_endlink)
+        H_rot, H_tran = compute_Hessians(self.robot, self._attached_name, q_cur=q, pos_endlink=p_endlink)
 
         v = J_tran.dot(qd)
         a = J_tran.dot(qdd) + np.dot(qd, np.dot(H_tran, qd))

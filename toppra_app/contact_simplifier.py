@@ -20,12 +20,13 @@ class ContactSimplifier(object):
     solid_object: SolidObject
 
     """
-    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50):
+    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False):
         self._N_samples = N_samples
         self._N_vertices = N_vertices
         self._contact = contact
         self._robot = robot
         self._solid_object = solid_object
+        self._verbose = verbose
         # Generate a the faces
         assert len(contact.get_raw_data()) > 0, "There is no raw data to work with."
         db = toppra_app.database.Database()
@@ -38,14 +39,14 @@ class ContactSimplifier(object):
         ws_all = np.vstack(ws_list)
         self._ws_all = ws_all
         logger.info("Finish loading data points.")
-        toppra_app.utils.preview_plot([[ws_all, 'x', 0.2]])
-
+        if self._verbose:
+            toppra_app.utils.preview_plot([[ws_all, 'x', 0.2]])
         hull_full = toppra_app.poly_contact.ConvexHull(ws_all)
         F, g = hull_full.get_halfspaces()
         self._contact.F_local = F
         self._contact.g_local = g
 
-    def simplify(self):
+    def simplify(self, verbose=False):
 
         # Sample points
         logger.info("Start sampling")
@@ -61,7 +62,8 @@ class ContactSimplifier(object):
                 ws_thin.append(w_sam)
         ws_thin = np.array(ws_thin)
         logger.info("Finish sampling ({:d} trials / {:d} samples)".format(trial, self._N_samples))
-        toppra_app.utils.preview_plot([[self._ws_all, 'x', 0.2], [ws_thin, 'o', 0.3]])
+        if self._verbose:
+            toppra_app.utils.preview_plot([[self._ws_all, 'x', 0.2], [ws_thin, 'o', 0.3]])
 
         # %% Polyhedral expansion
         vca_indices = toppra_app.poly_contact.vertex_component_analysis(self._ws_all)
@@ -95,21 +97,24 @@ class ContactSimplifier(object):
             vertices_index.append(opt_vertex_index)
         vertices = np.array(vertices)
         hull = toppra_app.poly_contact.ConvexHull(vertices)
-        fig, axs = plt.subplots(2, 2)
+        if verbose:
+            fig, axs = plt.subplots(2, 2)
+            to_plot = (
+                (0, 1, axs[0, 0]),
+                (0, 2, axs[0, 1]),
+                (3, 4, axs[1, 0]),
+                (4, 5, axs[1, 1]))
 
-        to_plot = (
-            (0, 1, axs[0, 0]),
-            (0, 2, axs[0, 1]),
-            (3, 4, axs[1, 0]),
-            (4, 5, axs[1, 1]))
+            for i, j, ax in to_plot:
+                ax.scatter(self._ws_all[:, i], self._ws_all[:, j], c='C0', alpha=0.5, s=10)
+                ax.scatter(ws_thin[:, i], ws_thin[:, j], marker='x', c='C1', zorder=10, s=50)
+                ax.plot(vertices[:, i], vertices[:, j], c='C2')
+            timer = fig.canvas.new_timer( interval=3000)  # creating a timer object and setting an interval of 3000 milliseconds
+            timer.start()
+            timer.add_callback(lambda : plt.close())
+            plt.show()
 
-        for i, j, ax in to_plot:
-            ax.scatter(self._ws_all[:, i], self._ws_all[:, j], c='C0', alpha=0.5, s=10)
-            ax.scatter(ws_thin[:, i], ws_thin[:, j], marker='x', c='C1', zorder=10, s=50)
-            ax.plot(vertices[:, i], vertices[:, j], c='C2')
-        plt.show()
-
-        new_contact = self._contact.Clone()
+        new_contact = self._contact.clone()
         new_contact.F_local = A
         new_contact.g_local = b
         return new_contact

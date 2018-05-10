@@ -56,7 +56,7 @@ def test_init_from_dict_object(object_fixture):
 
 def test_init_from_dict_contact(object_fixture):
     obj, env, d = object_fixture
-    assert obj.get_contact().get_profile() == "test"
+    assert obj.get_contact().get_profile_id() == "test"
 
 
 def test_load_to_rave(object_fixture):

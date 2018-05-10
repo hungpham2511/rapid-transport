@@ -37,11 +37,11 @@ class Contact(RaveRobotFixedFrame):
         Constraint coefficient. See above.
 
     """
-    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile="", raw_data=[]):
+    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile_id="", raw_data=[]):
         super(Contact, self).__init__(robot, link_name, T_link_contact, dofindices)
         self.F_local = F_local
         self.g_local = g_local
-        self._profile = profile
+        self._profile_id = profile_id
         self._raw_data = raw_data
 
     @staticmethod
@@ -73,13 +73,16 @@ class Contact(RaveRobotFixedFrame):
         T_link_contact[:3, 3] = contact_profile['position']
         T_link_contact[:3, :3] = contact_profile['orientation']
         return Contact(robot, contact_profile['attached_to_manipulator'],
-                       T_link_contact, F, g, profile=profile_id, raw_data=raw_data)
+                       T_link_contact, F, g, profile_id=profile_id, raw_data=raw_data)
+
+    def clone(self):
+        return Contact(self.robot, self._attached_name, self.T_link_contact, self.F_local, self.g_local, profile_id=self._profile_id)
 
     def get_raw_data(self):
         return self._raw_data
 
-    def get_profile(self):
-        return self._profile
+    def get_profile_id(self):
+        return self._profile_id
 
     def get_constraint_coeffs_local(self):
         return self.F_local, self.g_local

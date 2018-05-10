@@ -28,8 +28,6 @@ def contact_fixture(envcage, request):
 
 def test_basic(contact_fixture):
     robot, contact, solid_object = contact_fixture
-    cs = toppra_app.ContactSimplifier(robot, contact, solid_object)
-    cs_new = cs.simplify()
+    cs = toppra_app.ContactSimplifier(robot, contact, solid_object, N_samples=50, N_vertices=15)
+    cs_new = cs.simplify(verbose=True)
     assert isinstance(cs_new, toppra_app.Contact)
-
-

@@ -11,7 +11,6 @@ import argparse, yaml, os
 import openravepy as orpy
 from datetime import datetime
 
-
 def preview_plot(args):
     """ Preview data tuples given in args.
     """

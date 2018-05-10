@@ -210,7 +210,7 @@ suctioncup_kindlebox2_fortesting:
   - [0, 1, 0]
   - [0, 0, 1]
   position: [0, 0, 0]
-  raw_data: [suctioncup_kindlebox3, suctioncup_kindlebox4]
+  raw_data: [suctioncup_kindlebox3]
   volume: 0.13294794
 
 suctioncup_kindlebox2:

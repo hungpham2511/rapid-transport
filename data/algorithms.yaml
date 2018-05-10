@@ -8,7 +8,7 @@ topp_fast:
 
 topp_fast_2:
   kind: time-optimal
-  N: 50
+  N: 100
   interpolate_kinematics: True
   interpolate_dynamics: True
   sampling_period: 0.006666666666666667

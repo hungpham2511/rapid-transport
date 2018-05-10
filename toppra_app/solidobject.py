@@ -9,16 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
-    """ A class represents a the dynamics of a solid object.
+    """A class represents a the dynamics of a solid object.
 
-    The geometry of an object, such as its mesh, is not used.
+    The geometry of an object, such as its mesh, is only used for
+    collision checking. The transform of this mesh is given by
+    `T_object_model`.
 
-    Here the frame {object} is a frame whose origin coincides with the robot's com.
+    The frame {object} has an origin that coincides with the object
+    com. This framme is defined as a relative transform from a parent
+    frame `attached_name` and a relative transform `T_link_object`.
 
     Parameters
     ----------
     robot: openrave.Robot
-    _attached_name: str
+    attached_name: str
         Name of the link the object is attached to.
     T_link_object: (4,4)array
         Transformation matrix from {link} to {object}.
@@ -29,15 +33,18 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
     dofindices: list of int, optional
         List of active indices. This parameter is deprecated. Now use the active DOFs of
         the robot by default.
-    contact: optional
+    contact: Contact, optional
+        A contact object which contains information about the physical contact between this
+        object and the robot.
     profile
+
     """
-    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None, contact=None, profile="", name="", rave_model_path="", T_object_model=None):
+    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None, contact=None, profile_id="", name="", rave_model_path="", T_object_model=None):
         super(SolidObject, self).__init__(robot, attached_name, T_link_object, dofindices)
         self.m = m
         self.g_world = np.r_[0, 0, -9.8]
         self.I_local = np.array(I_local)
-        self._profile = profile
+        self._profile_id = profile_id
         self._name = name
         self._contact = contact
         self._robot = robot
@@ -67,12 +74,12 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         T_object_model = np.array(object_profile["T_object_model"], dtype=float)
         rave_model_path = expand_and_join(db.get_model_dir(), object_profile['rave_model'])
         solid_object = SolidObject(robot, input_dict['object_attach_to'], T_link_object, object_profile['mass'],
-                                   object_profile['local_inertia'], contact=contact, profile=input_dict['object_profile'],
+                                   object_profile['local_inertia'], contact=contact, profile_id=input_dict['object_profile'],
                                    name=input_dict['name'], rave_model_path=rave_model_path, T_object_model=T_object_model)
         return solid_object
 
     def get_profile(self):
-        return self._profile
+        return self._profile_id
 
     def get_name(self):
         return self._name

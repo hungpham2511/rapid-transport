@@ -120,7 +120,9 @@ if __name__ == '__main__':
         except Exception as e:
             pass
 
-    identify_string = str(args['contact'] + args['object'] + args['algorithm'] + args['robot'])
+    identify_string = str(
+        args['contact'] + args['object'] + args['algorithm'] + args['robot'] + args['attach'] + args['transform']
+    )
     traj_param_id = args['trajectory'] + "_" + hashlib.md5(identify_string).hexdigest()[:10]
     cmd = raw_input("Save parametrized trajectory to database as {:} y/[N]?".format(traj_param_id))
     if cmd != 'y':
@@ -137,6 +139,8 @@ if __name__ == '__main__':
             'reparametrized': True,
             'reparam_trajectory': args['trajectory'],
             'reparam_object': args['object'],
+            'reparam_attach': args['attach'],
+            'reparam_transform': args['transform'],
             'reparam_contact': args['contact'],
             'reparam_robot': args['robot'],
             'waypoints_npz': traj_param_id+".npz"

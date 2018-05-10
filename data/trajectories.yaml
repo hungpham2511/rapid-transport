@@ -136,14 +136,16 @@ suctioncup_traj5a:
   - [0.2, 0.78, 0.8, 0, 0.0, 0.1]
   - [-0.2, 0.78, 0.78, 0, 0.0, -0.0]
   - [-0.5, 0.78, 0.78, 0, 0, -0.1]
-suctioncup_traj5a_117979176b: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
-  id: suctioncup_traj5a_117979176b, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
+suctioncup_traj5a_0df1384bd3: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
+  id: suctioncup_traj5a_0df1384bd3, reparam_attach: denso_suction_cup, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
   reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
-  reparametrized: true, waypoints_npz: suctioncup_traj5a_117979176b.npz}
-suctioncup_traj5a_f563e7a3c9: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
-  id: suctioncup_traj5a_f563e7a3c9, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
-  reparam_object: kindlebox_light, reparam_robot: suctioncup1_slow, reparam_trajectory: suctioncup_traj5a,
-  reparametrized: true, waypoints_npz: suctioncup_traj5a_f563e7a3c9.npz}
+  reparam_transform: '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0,
+    1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_0df1384bd3.npz}
+suctioncup_traj5a_d72c8983db: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
+  id: suctioncup_traj5a_d72c8983db, reparam_attach: denso_suction_cup, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
+  reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
+  reparam_transform: '[[1, 0, 0, 32e-3], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0,
+    0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_d72c8983db.npz}
 traj1:
   attached_to_robot: denso_ft_sensor_gripper.robot.xml
   description: Simple experiment I did sometime ago.

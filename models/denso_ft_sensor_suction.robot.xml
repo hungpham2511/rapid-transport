@@ -124,7 +124,10 @@
   <manipulator name="denso_suction_cup">
     <base>link0</base>
     <effector>suction_head</effector>
-    <translation>0 0 0.043</translation>
+    <!-- translation 1: end of the alum piece -->
+    <translation>0 0 0.043</translation>  
+    <!-- translation 2: end of the new, bigger suction cup -->
+    <translation>0 0 13e-3</translation>
   </manipulator>
 
   <adjacent>link0 rear_connector</adjacent>

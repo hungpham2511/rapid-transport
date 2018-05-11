@@ -150,13 +150,13 @@ def strategy10(ws_all, contact_profile, object_profile, robot_profile,
     -------
     vertices: (M,6)array
     """
-
     hull_full = toppra_app.poly_contact.ConvexHull(ws_all)
     A, b = hull_full.get_halfspaces()
     print(hull_full.report())
+    db = toppra_app.database.Database()
 
     env = orpy.Environment()
-    env.Load('models/' + robot_profile['robot_model'])
+    env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), robot_profile['robot_model']))
     robot = env.GetRobots()[0]
     manip = robot.GetManipulator(robot_profile['manipulator'])
     arm_indices = manip.GetArmIndices()
@@ -244,10 +244,10 @@ if __name__ == '__main__':
     parse = argparse.ArgumentParser(description="A program for simplifying and converting contact configurations. "
                                                 "Contact should contain raw_data field.")
     parse.add_argument('-c', '--contact', help='Contact to be simplified', required=True)
-    parse.add_argument('-s', '--strategy', help='Strategy to use. Best performing strategy so far: strategy10.', required=True)
+    parse.add_argument('-s', '--strategy', help='Strategy to use. Best performing strategy so far: strategy10.', required=False, default="strategy10")
     parse.add_argument('-f', '--new_manip', help='New manipulator to transform contact to. Not fully support.', required=False)
     parse.add_argument('-o', '--object', help='Object specification, use for dynamic exploration (strategy10).', required=False)
-    parse.add_argument('-r', '--robot', help='Robot specification, use for dynamic exploration (strategy10).', required=False)
+    parse.add_argument('-r', '--robot', help='Robot specification, use for dynamic exploration (strategy10).', required=False, default="suctioncup1")
     parse.add_argument('-a', '--N_samples', help='Number of random wrench samples (strategy10)', required=False, default=100, type=int)
     parse.add_argument('-e', '--N_vertices', help='Number of max vertices during expansion (strategy10)', required=False, default=50, type=int)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")

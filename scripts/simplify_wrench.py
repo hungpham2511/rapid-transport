@@ -367,7 +367,6 @@ if __name__ == '__main__':
             "N_faces": hull_simplified.get_halfspaces()[0].shape[0],
             "volume": hull_simplified.compute_volume(),
             'description': contact_profile['description'],
-            'attached_to_robot': contact_profile['attached_to_robot'],
             'attached_to_manipulator': new_manip,
             'strategy': args['strategy'],
             'position': [0, 0, 0],

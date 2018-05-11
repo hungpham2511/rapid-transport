@@ -1,14 +1,33 @@
-nan:
+bigskirt_bluenb:
   attached_to_manipulator: denso_ft_sensor
-  constraint_coeffs_file: contact1.npz
-  description: An empty contact. Use when you want to consider kinematic constraint only.
-  id: nan
+  description: Contact between the big suction cup with purple skirt and the blue
+    book.
+  id: bigskirt_bluenb
   orientation:
   - [1, 0, 0]
   - [0, 1, 0]
   - [0, 0, 1]
   position: [0, 0, 0]
-  constraint_coeffs_file: nan.npz
+  raw_data: [bigskirt_bluenb1]
+bigskirt_bluenb_a53d963616:
+  N_faces: 61
+  N_vertices: 11
+  arg_N_samples: 200
+  arg_N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_bluenb_a53d963616.npz
+  description: Contact between the big suction cup with purple skirt and the blue
+    book.
+  generated_from: bigskirt_bluenb
+  generated_on: '2018-05-11 15:42:52.465463'
+  id: bigskirt_bluenb_a53d963616
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 115.05106
 contact1:
   N_faces: 550725
   N_vertices: 4968
@@ -42,6 +61,17 @@ contact1_simplified:
   - [0, 0, 1]
   position: [0, 0, 0]
   volume: 0.12213515
+nan:
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: nan.npz
+  description: An empty contact. Use when you want to consider kinematic constraint
+    only.
+  id: nan
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
 nonprehensile_gripper:
   N_faces: 234440
   N_vertices: 2589
@@ -207,23 +237,6 @@ suctioncup_kindlebox:
   position: [0, 0, 0]
   raw_data: [suctioncup_kindlebox1, suctioncup_kindlebox2]
   volume: 0.13294794
-suctioncup_kindlebox2_fortesting:
-  N_faces: 489214
-  N_vertices: 4879
-  attached_to_manipulator: denso_ft_sensor
-  attached_to_robot: denso_ft_sensor_suction.robot.xml
-  description: Contact between the suction cup and the kindle box. Very light interactions
-    are recorded.
-  id: suctioncup_kindlebox2
-  constraint_coeffs_file: suctioncup_kindlebox2_467795874a.npz
-  orientation:
-  - [1, 0, 0]
-  - [0, 1, 0]
-  - [0, 0, 1]
-  position: [0, 0, 0]
-  raw_data: [suctioncup_kindlebox3]
-  volume: 0.13294794
-
 suctioncup_kindlebox2:
   N_faces: 489214
   N_vertices: 4879
@@ -259,6 +272,22 @@ suctioncup_kindlebox2_467795874a:
   position: [0, 0, 0]
   strategy: strategy10
   volume: 0.032072574
+suctioncup_kindlebox2_fortesting:
+  N_faces: 489214
+  N_vertices: 4879
+  attached_to_manipulator: denso_ft_sensor
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  constraint_coeffs_file: suctioncup_kindlebox2_467795874a.npz
+  description: Contact between the suction cup and the kindle box. Very light interactions
+    are recorded.
+  id: suctioncup_kindlebox2
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [suctioncup_kindlebox3]
+  volume: 0.13294794
 suctioncup_kindlebox_467795874a:
   N_faces: 2282
   N_vertices: 51
@@ -351,17 +380,6 @@ suctioncup_skirt_kindlebox_467795874a:
   position: [0, 0, 0]
   strategy: strategy10
   volume: 1.6496495
-test2:
-  attached_to_manipulator: arm
-  id: test
-  key_points:
-  - [0, 0, 0, 0, 0, 0]
-  orientation:
-  - [1, 0, 0]
-  - [0, 1, 0]
-  - [0, 0, 1]
-  position: [0, 0, 0]
-  raw_data: [test]
 test:
   N_faces: 99142
   N_vertices: 1079
@@ -379,6 +397,17 @@ test:
   position: [0, 0, 0]
   raw_data: [test]
   volume: 0.011818641
+test2:
+  attached_to_manipulator: arm
+  id: test
+  key_points:
+  - [0, 0, 0, 0, 0, 0]
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [test]
 test_simplified:
   N_faces: 2777
   N_vertices: 57

@@ -5,6 +5,34 @@
 #position and orientation are of the transformation of the object in
 # the manipulator frame.
 
+bluenb:
+  description: The blue PaperLuxe book.
+  attached_to_manipulator: denso_suction_cup
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/kindle_box.xml
+  mass: 0.551
+  local_inertia:
+    - [ 9.28e-4, 0,        0     ]
+    - [ 0,        2.11e-3, 0     ]
+    - [ 0,        0,       2.98e-3]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
+  position: [0, 0, 12.5e-3]
+  orientation:
+    - [1, 0, 0]
+    - [0, -1, 0]
+    - [0, 0, -1]
+
+# bluenb is attached to denso_suction_cup
+# The usual transformation is
+# [[1, 0, 0, 0],
+#  [0, -1, 0, 0],
+#  [0, 0, -1, 12.5e-3],
+#  [0, 0, 0, 1]]
+    
 kindlebox_light:
   description: A kindle package box, padded with an acrylic piece inside (for added weight).
   attached_to_manipulator: denso_suction_cup

@@ -21,7 +21,7 @@ class PickAndPlaceDemo(object):
         else:
             self._env = env
             self._env.Reset()
-        self._env.SetDebugLevel(0)
+        self._env.SetDebugLevel(2)
         self._env.Load(_env_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
         self._objects = []
@@ -31,13 +31,13 @@ class PickAndPlaceDemo(object):
             self._objects.append(obj)
             obj.load_to_env(obj_d['T_start'])
             self._robot.SetActiveManipulator(obj_d['object_attach_to'])
-        # Generate IKFast if needed
-        iktype = orpy.IkParameterization.Type.Transform6D
-        ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(self._robot, iktype=iktype)
-        if not ikmodel.load():
-            print 'Generating IKFast {0}. It will take few minutes...'.format(iktype.name)
-            ikmodel.autogenerate()
-            print 'IKFast {0} has been successfully generated'.format(iktype.name)
+            # Generate IKFast for each active manipulator
+            iktype = orpy.IkParameterization.Type.Transform6D
+            ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(self._robot, iktype=iktype)
+            if not ikmodel.load():
+                print 'Generating IKFast {0}. It will take few minutes...'.format(iktype.name)
+                ikmodel.autogenerate()
+                print 'IKFast {0} has been successfully generated'.format(iktype.name)
 
     def view(self):
         res = self._env.SetViewer('qtosg')
@@ -110,13 +110,15 @@ class PickAndPlaceDemo(object):
                                                      constraintfreedoms=[1, 1, 0, 0, 0, 0],
                                                      constraintmatrix=T_taskframe_world,
                                                      constrainttaskmatrix=T_ee_obj,
-                                                     constrainterrorthresh=0.8,
+                                                     constrainterrorthresh=0.5,
                                                      execute=False,
                                                      steplength=0.002)
             except orpy.planning_error, e:
                 fail = True
                 logger.warn("Constraint planning fails.")
                 break
+            self.get_robot().GetController().SetPath(traj1)
+            self.get_robot().WaitForController(0)
 
             # Shortcutting
             with self.get_robot():
@@ -131,6 +133,15 @@ class PickAndPlaceDemo(object):
 
                 if success:
                     status = planner.PlanPath(trajnew)
+
+                if status == orpy.PlannerStatus.HasSolution:
+                    logger.info("Shortcutting succeeds.")
+                else:
+                    logger.fatal("Shortcutting fails. Playing traj now to debug.")
+                    fail = True
+                    break
+                    # self.get_robot().GetController().SetPath(traj1)
+                    # self.get_robot().WaitForController(0)
 
             logger.info("Method: {:}, nb waypoints: {:d}, duration {:f}\n"
                         " Playing in 2 sec".format(method, trajnew.GetNumWaypoints(), trajnew.GetDuration()))

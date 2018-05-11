@@ -141,6 +141,22 @@ suctioncup_traj5a_0df1384bd3: {attached_to_robot: denso_ft_sensor_suction.robot.
   reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
   reparam_transform: '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0,
     1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_0df1384bd3.npz}
+suctioncup_traj5a_2765258cb0: {id: suctioncup_traj5a_2765258cb0, reparam_attach: denso_suction_cup,
+  reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0], [0, 1,
+    0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_2765258cb0.npz}
+suctioncup_traj5a_4e0101cd89: {id: suctioncup_traj5a_4e0101cd89, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 30e-3], [0,
+    -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_4e0101cd89.npz}
+suctioncup_traj5a_9e7c94e36e: {id: suctioncup_traj5a_9e7c94e36e, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_squarewood_177f83d2fb, reparam_object: squarewood, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
+    -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_9e7c94e36e.npz}
+suctioncup_traj5a_d0bd601b11: {id: suctioncup_traj5a_d0bd601b11, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0], [0, -1,
+    0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_d0bd601b11.npz}
 suctioncup_traj5a_d72c8983db: {attached_to_robot: denso_ft_sensor_suction.robot.xml,
   id: suctioncup_traj5a_d72c8983db, reparam_attach: denso_suction_cup, reparam_contact: suctioncup_skirt_kindlebox_467795874a,
   reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,

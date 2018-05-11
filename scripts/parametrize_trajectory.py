@@ -47,6 +47,7 @@ def main():
                                           np.array(object_profile['local_inertia'], dtype=float),
                                           dofindices=arm_indices)
     contact = toppra_app.Contact.init_from_profile_id(robot, args['contact'])
+    assert contact.F_local is not None, "A contact needs to be pre-processed before it can be used. Run simplify_wrench.py on this contact."
 
     pc_object_trans = toppra_app.create_object_transporation_constraint(contact, solid_object)
     if algorithm_profile['interpolate_dynamics']:

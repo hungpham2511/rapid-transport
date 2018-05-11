@@ -1,5 +1,8 @@
 bigskirt_bluenb:
+  N_faces: 1166392
+  N_vertices: 6853
   attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_bluenb.npz
   description: Contact between the big suction cup with purple skirt and the blue
     book.
   id: bigskirt_bluenb
@@ -9,9 +12,10 @@ bigskirt_bluenb:
   - [0, 0, 1]
   position: [0, 0, 0]
   raw_data: [bigskirt_bluenb1]
+  volume: 1286.3894
 bigskirt_bluenb_a53d963616:
-  N_faces: 61
-  N_vertices: 11
+  N_faces: 137
+  N_vertices: 15
   arg_N_samples: 200
   arg_N_vertices: 50
   attached_to_manipulator: denso_ft_sensor
@@ -19,7 +23,7 @@ bigskirt_bluenb_a53d963616:
   description: Contact between the big suction cup with purple skirt and the blue
     book.
   generated_from: bigskirt_bluenb
-  generated_on: '2018-05-11 15:42:52.465463'
+  generated_on: '2018-05-11 16:33:22.673490'
   id: bigskirt_bluenb_a53d963616
   orientation:
   - [1, 0, 0]
@@ -27,7 +31,39 @@ bigskirt_bluenb_a53d963616:
   - [0, 0, 1]
   position: [0, 0, 0]
   strategy: strategy10
-  volume: 115.05106
+  volume: 252.32953
+bigskirt_squarewood:
+  N_faces: 1147461
+  N_vertices: 7136
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_squarewood.npz
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+  id: bigskirt_squarewood
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [bigskirt_squarewood]
+  volume: 673.47717
+bigskirt_squarewood_177f83d2fb:
+  N_faces: 287
+  N_vertices: 19
+  arg_N_samples: 200
+  arg_N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_squarewood_177f83d2fb.npz
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+  generated_from: bigskirt_squarewood
+  generated_on: '2018-05-11 17:00:01.513573'
+  id: bigskirt_squarewood_177f83d2fb
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 204.03504
 contact1:
   N_faces: 550725
   N_vertices: 4968

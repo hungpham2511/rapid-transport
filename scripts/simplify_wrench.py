@@ -182,7 +182,8 @@ def strategy10(ws_all, contact_profile, object_profile, robot_profile,
     trial = 0
     while len(ws_thin) < N_samples:
         trial += 1
-        qdd_sam, qd_sam = toppra_app.utils.sample_uniform(2, 0.5, 6)
+        qdd_sam = toppra_app.utils.sample_uniform(1, 10, 6)[0]
+        qd_sam = toppra_app.utils.sample_uniform(1, 2, 6)[0]
         q_sam = toppra_app.utils.sample_uniform(1, 3, 6)[0]
         T_world_contact = contact.compute_frame_transform(q_sam)
         w_sam = solid_object.compute_inverse_dyn(q_sam, qd_sam, qdd_sam, T_world_contact)
@@ -354,10 +355,9 @@ if __name__ == '__main__':
     else:
         new_contact_id = contact_profile['id'] + "_" \
                          + hashlib.md5(args['strategy']).hexdigest()[:10]
-    cmd = raw_input("Save the simplified contact as [{:}] [y/N]?".format(new_contact_id))
+    cmd = raw_input("Save the simplified contact as [{:}] y/[N]?".format(new_contact_id))
     if cmd != 'y':
         print("Do not save. Exit!")
-        exit()
     else:
         A, b, = hull_simplified.get_halfspaces()
         np.savez(os.path.join(db.get_contact_data_dir(), new_contact_id + ".npz"), A=A, b=b)
@@ -380,10 +380,9 @@ if __name__ == '__main__':
             new_contact_profile['arg_N_vertices'] = args['N_vertices']
         db.insert_profile(new_contact_profile, "contact")
         print("New profile saved.")
-    cmd = raw_input("Store constrain coefficients for the input constraint? [y/N]")
+    cmd = raw_input("Store constrain coefficients for the input constraint? y/[N]")
     if cmd != "y":
         print("Exit without saving!")
-        exit()
     else:
         A, b = hull.get_halfspaces()
         np.savez(os.path.join(db.get_contact_data_dir(), contact_profile['id'] + ".npz"), A=A, b=b)
@@ -393,4 +392,5 @@ if __name__ == '__main__':
         contact_profile['volume'] = hull.compute_volume()
         db.insert_profile(contact_profile, "contact")
         print("Profile inserted. Exit!")
+    exit(42)
 

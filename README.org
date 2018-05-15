@@ -1,7 +1,0 @@
-This folder contains scripts I wrote for my paper on using TOPP-RA for object
-transportation.
-
-Folder *models* contains openrave models.
-
-* Identification for Aluminian block on rubber base
-  

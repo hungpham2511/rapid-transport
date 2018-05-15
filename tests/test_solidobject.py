@@ -1,7 +1,7 @@
 import pytest
 import openravepy as orpy
-import toppra_app
-from toppra_app.utils import compute_Hessians, compute_Jacobians
+import transport
+from transport.utils import compute_Hessians, compute_Jacobians
 import numpy as np
 
 
@@ -28,7 +28,7 @@ def test_inv_dyn_frame_static(setup, q0):
     I_o = np.eye(3)
     arm_indices = range(6)
 
-    solid_object = toppra_app.SolidObject(robot, ft_name, T_eo, m, I_o, dofindices=arm_indices)
+    solid_object = transport.SolidObject(robot, ft_name, T_eo, m, I_o, dofindices=arm_indices)
     link = robot.GetLink(ft_name)
 
     qd0 = np.zeros(6)
@@ -62,7 +62,7 @@ def test_static_not_coincide(setup, q0):
     I_o = np.eye(3)
     arm_indices = range(6)
 
-    solid_object = toppra_app.SolidObject(robot, ft_name, T_link_obj, m, I_o, dofindices=arm_indices)
+    solid_object = transport.SolidObject(robot, ft_name, T_link_obj, m, I_o, dofindices=arm_indices)
     link = robot.GetLink(ft_name)
 
     # Case 1: static and simple pose
@@ -85,7 +85,7 @@ def test_static_offset(setup):
     T_link_object = np.eye(4)
     dofindices = range(6)
 
-    obj = toppra_app.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3), dofindices=range(6))
+    obj = transport.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3), dofindices=range(6))
 
     q0 = np.zeros(6)
     qd0 = np.zeros(6)
@@ -110,7 +110,7 @@ def test_dynamics_coincide(setup):
     T_link_object = np.eye(4)
     dofindices = range(6)
 
-    obj = toppra_app.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3), dofindices=range(6))
+    obj = transport.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3), dofindices=range(6))
 
     np.random.seed(10)
     q0 = np.random.randn(6) / 2
@@ -148,7 +148,7 @@ def test_dynamics_noncoincide(setup):
                               [0, 0, -1, 0.2],
                               [0, 1, 0, -0.2],
                               [0, 0, 0, 1]])
-    obj = toppra_app.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3))
+    obj = transport.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3))
 
     np.random.seed(10)
     q0 = np.random.randn(6) / 2
@@ -187,7 +187,7 @@ def test_dynamics_noncoincide_body_frame(setup):
                            [0, 0, -1, 0.2],
                            [0, 1, 0, -0.2],
                            [0, 0, 0, 1]])
-    obj = toppra_app.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3))
+    obj = transport.SolidObject(robot, ft_name, T_link_object, 1, np.eye(3))
 
     np.random.seed(2)
     q0 = np.random.randn(6) / 2

@@ -1,5 +1,5 @@
 import pytest, time, sys
-import toppra_app
+import transport
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,8 +7,8 @@ import numpy as np
 def envcage(setup):
     env = setup
     env.Reset()
-    db = toppra_app.database.Database()
-    env.Load(toppra_app.utils.expand_and_join(
+    db = transport.database.Database()
+    env.Load(transport.utils.expand_and_join(
         db.get_model_dir(), "caged_denso_ft_sensor_suction.env.xml"))
     env.SetViewer("qtosg")
     robot = env.GetRobots()[0]
@@ -22,7 +22,7 @@ def envcage(setup):
 def test_basic(envcage, qinit):
     robot = envcage
     robot.SetActiveDOFValues(qinit)
-    traj_array = toppra_app.generate_twist_at_active_conf(robot, max_angle=0.5)
+    traj_array = transport.generate_twist_at_active_conf(robot, max_angle=0.5)
 
     np.testing.assert_allclose(traj_array[0], qinit, atol=1e-8)
     np.testing.assert_allclose(traj_array[-1], qinit, atol=1e-8)
@@ -49,7 +49,7 @@ def test_gen_twist_console(monkeypatch, setup):
     # path argv and raw_input
     monkeypatch.setattr(sys, "argv", ["", '-q', "[0, 1, 1, 0, 0, 0]"])
     monkeypatch.setattr("__builtin__.raw_input", lambda s: "abc")
-    toppra_app.console.gen_twist_main(env)
+    transport.console.gen_twist_main(env)
 
 
 

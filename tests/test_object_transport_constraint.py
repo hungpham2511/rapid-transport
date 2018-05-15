@@ -7,7 +7,7 @@ import openravepy as orpy
 import toppra as ta
 import pytest
 
-import toppra_app
+import transport
 
 
 @pytest.fixture(scope="module")
@@ -42,14 +42,14 @@ def test_basic_contact_obj_coincides(setup, si, T_eo, utest, xtest):
     ly = 62.9e-3
     lz = 25.2e-3
     I_o = m / 12 * np.diag([ly ** 2 + lz ** 2, lx ** 2 + lz ** 2, lx ** 2 + ly ** 2])
-    solid_object = toppra_app.SolidObject(robot, ft_name, T_eo, m, I_o)
+    solid_object = transport.SolidObject(robot, ft_name, T_eo, m, I_o)
 
     # Contact properties:   -1 <= w <= 1
     F = np.vstack((np.eye(6), -np.eye(6)))
     g = np.hstack((np.ones(6), np.ones(6)))
-    contact = toppra_app.Contact(robot, ft_name, T_eo, F, g)
+    contact = transport.Contact(robot, ft_name, T_eo, F, g)
 
-    pc_object_trans = toppra_app.create_object_transporation_constraint(contact, solid_object)
+    pc_object_trans = transport.create_object_transporation_constraint(contact, solid_object)
 
     # TOPPRA parameters
     waypoints = np.array([

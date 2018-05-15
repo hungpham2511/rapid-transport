@@ -1,8 +1,12 @@
 import argparse, yaml, os
-import toppra, toppra_app
+import toppra
 import openravepy as orpy
 import numpy as np
 import hashlib
+
+from ..profile_loading import Database
+from .. import utils
+from ..trajectory_utils import generate_twist_at_active_conf
 
 
 def main(env=None):
@@ -23,18 +27,18 @@ def main(env=None):
     parser.add_argument('-v', "--verbose", action="store_true", default=False)
     args = parser.parse_args()
 
-    db = toppra_app.database.Database()
+    db = Database()
     if env is None:
         env = orpy.Environment()
     else:
         env.Reset()
-    env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), args.environment))
+    env.Load(utils.expand_and_join(db.get_model_dir(), args.environment))
     if args.verbose:
         env.SetViewer("qtosg")
     robot = env.GetRobot(args.robot_name)
     manip = robot.SetActiveManipulator(args.manipulator)
     robot.SetActiveDOFValues(np.array(yaml.load(args.joint_values)))
-    traj_array = toppra_app.generate_twist_at_active_conf(robot, max_angle=float(args.angle))
+    traj_array = generate_twist_at_active_conf(robot, max_angle=float(args.angle))
 
     identify_string = args.joint_values + args.environment + args.robot_name + args.manipulator + args.angle
     traj_param_id = "twist" + "_" + hashlib.md5(identify_string).hexdigest()[:10]

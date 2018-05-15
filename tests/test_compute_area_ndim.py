@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from toppra_app.utils import compute_area_ndim
+from transport.utils import compute_area_ndim
 
 
 def test_2d():

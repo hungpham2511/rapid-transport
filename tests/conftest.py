@@ -1,4 +1,4 @@
-import pytest, toppra_app
+import pytest, transport
 import openravepy as orpy
 
 
@@ -24,8 +24,8 @@ def envlab1(setup):
 def envcage(setup):
     env = setup
     env.Reset()
-    db = toppra_app.database.Database()
-    env.Load(toppra_app.utils.expand_and_join(
+    db = transport.database.Database()
+    env.Load(transport.utils.expand_and_join(
         db.get_model_dir(), "caged_denso_ft_sensor_suction.env.xml"))
     robot = env.GetRobots()[0]
     robot.SetActiveDOFs(range(6))

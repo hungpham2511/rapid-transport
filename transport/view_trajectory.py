@@ -1,24 +1,26 @@
 import os
-import toppra_app, toppra, time
+import toppra, time
 import openravepy as orpy
 import numpy as np
+from .profile_loading import Database
+from .utils import expand_and_join
 
 
 class ViewTrajectory(object):
 
     def __init__(self, env, traj_id, env_dir, robot_name, object_id, link_name, T_link_object, dt=6.67e-4):
         self.dt = dt
-        self.db = toppra_app.database.Database()
+        self.db = Database()
         self.traj_profile = self.db.retrieve_profile(traj_id, "trajectory")
         obj_profile = self.db.retrieve_profile(object_id, "object")
         self.env = env
         self.env.Reset()
-        self.env.Load(toppra_app.utils.expand_and_join(self.db.get_model_dir(), env_dir))
+        self.env.Load(expand_and_join(self.db.get_model_dir(), env_dir))
         self.robot = self.env.GetRobot(robot_name)
         assert self.robot is not None
 
         self.env.SetViewer('qtosg')
-        self.env.Load(toppra_app.utils.expand_and_join(self.db.get_model_dir(), obj_profile['rave_model']))
+        self.env.Load(expand_and_join(self.db.get_model_dir(), obj_profile['rave_model']))
         obj = self.env.GetBodies()[-1]
         self.obj = obj
 

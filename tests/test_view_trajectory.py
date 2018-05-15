@@ -1,5 +1,5 @@
 import numpy as np
-import pytest, toppra_app
+import pytest, transport
 import openravepy as orpy
 
 
@@ -7,7 +7,7 @@ import openravepy as orpy
 @pytest.mark.parametrize("object_id", ["kindlebox", "small_alum_block", "heavy_alum_1"])
 def test_view_basic(setup, traj_id, object_id):
     env = setup
-    view_traj = toppra_app.ViewTrajectory(
+    view_traj = transport.ViewTrajectory(
         env,
         traj_id,
         "caged_denso_ft_sensor_suction.env.xml",

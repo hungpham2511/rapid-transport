@@ -1,4 +1,4 @@
-import toppra_app
+import transport
 import pytest
 import logging
 
@@ -8,7 +8,7 @@ logging.basicConfig(level="DEBUG")
 @pytest.fixture(params=["suctioncup_kindlebox2_fortesting"])
 def contact_fixture(envcage, request):
     robot = envcage.GetRobots()[0]
-    contact = toppra_app.Contact.init_from_profile_id(robot, request.param)
+    contact = transport.Contact.init_from_profile_id(robot, request.param)
     input_dict = {
         "name": "object1",
         "object_profile": "kindlebox_light",
@@ -18,7 +18,7 @@ def contact_fixture(envcage, request):
                           [0, 0, 1, 9.08e-3],
                           [0, 0, 0, 1]]
     }
-    solid_object = toppra_app.SolidObject.init_from_dict(robot, input_dict)
+    solid_object = transport.SolidObject.init_from_dict(robot, input_dict)
 
     # Remove pre-gen data points
     contact.F_local = None
@@ -28,6 +28,6 @@ def contact_fixture(envcage, request):
 
 def test_basic(contact_fixture):
     robot, contact, solid_object = contact_fixture
-    cs = toppra_app.ContactSimplifier(robot, contact, solid_object, N_samples=50, N_vertices=15)
+    cs = transport.ContactSimplifier(robot, contact, solid_object, N_samples=50, N_vertices=15)
     cs_new = cs.simplify(verbose=True)
-    assert isinstance(cs_new, toppra_app.Contact)
+    assert isinstance(cs_new, transport.Contact)

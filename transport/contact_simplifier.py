@@ -1,10 +1,17 @@
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import toppra_app, hashlib
+import hashlib
 import argparse, yaml, os
 import openravepy as orpy
 from datetime import datetime
+
+from .profile_loading import Database
+from .utils import load_data_ati_log, preview_plot
+from .poly_contact import ConvexHull
+
+from . import utils
+from . import poly_contact
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +44,19 @@ class ContactSimplifier(object):
         self._verbose = verbose
         # Generate a the faces
         assert len(contact.get_raw_data()) > 0, "There is no raw data to work with."
-        db = toppra_app.database.Database()
+        db = Database()
         ws_list = []
         logger.info("Start loading data points.")
         for file_name in self._contact.get_raw_data():
             file_dir = os.path.join(db.get_contact_data_dir(), file_name)
-            ws_ = toppra_app.utils.load_data_ati_log(file_dir)
+            ws_ = load_data_ati_log(file_dir)
             ws_list.append(ws_)
         ws_all = np.vstack(ws_list)
         self._ws_all = ws_all
         logger.info("Finish loading data points.")
         if self._verbose:
-            toppra_app.utils.preview_plot([[ws_all, 'x', 0.2]])
-        hull_full = toppra_app.poly_contact.ConvexHull(ws_all)
+            preview_plot([[ws_all, 'x', 0.2]])
+        hull_full = ConvexHull(ws_all)
         F, g = hull_full.get_halfspaces()
         self._contact.F_local = F
         self._contact.g_local = g
@@ -67,8 +74,8 @@ class ContactSimplifier(object):
         trial = 0
         while len(ws_thin) < self._N_samples:
             trial += 1
-            qdd_sam, qd_sam = toppra_app.utils.sample_uniform(2, 0.5, 6)
-            q_sam = toppra_app.utils.sample_uniform(1, 3, 6)[0]
+            qdd_sam, qd_sam = utils.sample_uniform(2, 0.5, 6)
+            q_sam = utils.sample_uniform(1, 3, 6)[0]
             T_world_contact = self._contact.compute_frame_transform(q_sam)
             w_sam = self._solid_object.compute_inverse_dyn(q_sam, qd_sam, qdd_sam, T_world_contact)
             if np.all(self._contact.F_local.dot(w_sam) - self._contact.g_local <= 0):
@@ -76,16 +83,16 @@ class ContactSimplifier(object):
         ws_thin = np.array(ws_thin)
         logger.info("Finish sampling ({:d} trials / {:d} samples)".format(trial, self._N_samples))
         if self._verbose:
-            toppra_app.utils.preview_plot([[self._ws_all, 'x', 0.2], [ws_thin, 'o', 0.3]])
+            utils.preview_plot([[self._ws_all, 'x', 0.2], [ws_thin, 'o', 0.3]])
 
         # %% Polyhedral expansion
-        vca_indices = toppra_app.poly_contact.vertex_component_analysis(self._ws_all)
+        vca_indices = poly_contact.vertex_component_analysis(self._ws_all)
 
         vertices = self._ws_all[vca_indices].tolist()
         vertices_index = list(vca_indices)
         N_vertices = -1
         while N_vertices < self._N_vertices:
-            hull = toppra_app.poly_contact.ConvexHull(vertices)
+            hull = poly_contact.ConvexHull(vertices)
             N_vertices = hull.vertices.shape[0]
 
             A, b = hull.get_halfspaces()
@@ -109,7 +116,7 @@ class ContactSimplifier(object):
             vertices.append(self._ws_all[opt_vertex_index])
             vertices_index.append(opt_vertex_index)
         vertices = np.array(vertices)
-        hull = toppra_app.poly_contact.ConvexHull(vertices)
+        hull = poly_contact.ConvexHull(vertices)
         if verbose:
             fig, axs = plt.subplots(2, 2)
             to_plot = (

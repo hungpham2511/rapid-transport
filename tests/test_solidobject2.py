@@ -1,5 +1,5 @@
 import pytest, time
-import toppra_app
+import transport
 import openravepy as orpy
 import numpy as np
 
@@ -18,7 +18,7 @@ def object_fixture(setup):
          "contact_attach_to": "wam7",
          "T_link_object": [[1,0,0,0], [0, 1, 0, 0], [0, 0, 1, 9.08e-3], [0, 0, 0, 1]]}
 
-    obj = toppra_app.SolidObject.init_from_dict(robot, d)
+    obj = transport.SolidObject.init_from_dict(robot, d)
     yield obj, env, d
 
 
@@ -28,14 +28,14 @@ def test_init_from_dict(object_fixture):
     obj, env, d = object_fixture
     assert obj is not None
     assert obj.get_name() == "test"
-    assert isinstance(obj.get_contact(), toppra_app.Contact)
+    assert isinstance(obj.get_contact(), transport.Contact)
 
 
 def test_init_from_dict_object(object_fixture):
     "Object must be isaniated from kindlebox_light"
     obj, env, d = object_fixture
     # Check  "kindlebox_light"
-    db = toppra_app.database.Database()
+    db = transport.database.Database()
     obj_profile = db.retrieve_profile(d['object_profile'], "object")
 
     T_ee_obj = np.eye(4)

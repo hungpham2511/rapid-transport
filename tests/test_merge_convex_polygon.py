@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from toppra_app.plannar_geometry import merge_convex_polygon
+from transport.plannar_geometry import merge_convex_polygon
 
 
 def to_float(C):

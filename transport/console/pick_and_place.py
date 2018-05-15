@@ -1,17 +1,29 @@
 import openravepy as orpy
-import toppra_app, time, toppra
+import time, toppra
 import numpy as np
-from toppra_app.utils import expand_and_join
-import yaml, logging
-import os
+import yaml
+import logging
+
+from ..utils import expand_and_join
+from ..profile_loading import Database
+from ..solidobject import SolidObject
+from ..toppra_constraints import create_object_transporation_constraint
+
 logger = logging.getLogger(__name__)
-logging.basicConfig(level='DEBUG')
+
+def main(load_path="scenarios/test0.scenario.yaml", env=None):
+    demo = PickAndPlaceDemo(load_path, env)
+    demo.view()
+    print "Starting demo.."
+    demo.run()
 
 
 class PickAndPlaceDemo(object):
+    """ 
+    """
     def __init__(self, load_path=None, env=None):
         assert load_path is not None
-        db = toppra_app.database.Database()
+        db = Database()
         _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
             self._scenario = yaml.load(f.read())
@@ -27,7 +39,7 @@ class PickAndPlaceDemo(object):
         self._objects = []
         # Load all objects to openRave
         for obj_d in self._scenario['objects']:
-            obj = toppra_app.SolidObject.init_from_dict(self._robot, obj_d)
+            obj = SolidObject.init_from_dict(self._robot, obj_d)
             self._objects.append(obj)
             obj.load_to_env(obj_d['T_start'])
             self._robot.SetActiveManipulator(obj_d['object_attach_to'])
@@ -150,7 +162,7 @@ class PickAndPlaceDemo(object):
             # Retime now
             logger.info("Retime using toppra.")
             contact = self.get_object(obj_d['name']).get_contact()
-            contact_constraint = toppra_app.create_object_transporation_constraint(contact, self.get_object(obj_d['name']))
+            contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_d['name']))
             traj1new = toppra.retime_active_joints_kinematics(
                 trajnew, self.get_robot(), additional_constraints=[contact_constraint])
 
@@ -161,12 +173,3 @@ class PickAndPlaceDemo(object):
         time.sleep(2)
         return not fail
 
-
-if __name__ == "__main__":
-    demo = PickAndPlaceDemo("scenarios/test0.scenario.yaml")
-    demo.view()
-    demo.run()
-    import IPython
-    if IPython.get_ipython() is None:
-        IPython.embed()
-    

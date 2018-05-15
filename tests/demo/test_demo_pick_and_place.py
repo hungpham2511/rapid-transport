@@ -1,6 +1,6 @@
 import pytest, time
 import numpy as np
-from demos.pick_and_place import PickAndPlaceDemo
+from transport.console.pick_and_place import PickAndPlaceDemo
 import openravepy as orpy
 
 import logging

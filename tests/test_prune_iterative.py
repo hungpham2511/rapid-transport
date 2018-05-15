@@ -1,4 +1,4 @@
-from toppra_app.plannar_geometry import halfplanes_intersection
+from transport.plannar_geometry import halfplanes_intersection
 import numpy as np
 import cvxpy as cvx
 import pytest

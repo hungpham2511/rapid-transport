@@ -11,18 +11,55 @@ from ..toppra_constraints import create_object_transporation_constraint
 
 logger = logging.getLogger(__name__)
 
-def main(load_path="scenarios/test0.scenario.yaml", env=None):
-    demo = PickAndPlaceDemo(load_path, env)
+
+def main(*args, **kwargs):
+    demo = PickAndPlaceDemo(*args, **kwargs)
     demo.view()
     print "Starting demo.."
     demo.run()
 
 
+def plan_to_joint_configuration(
+        robot, qgoal, planner='birrt', max_planner_iterations=40,max_postprocessing_iterations=60):
+    env = robot.GetEnv()
+    rave_planner = orpy.RaveCreatePlanner(env, planner)
+    params = orpy.Planner.PlannerParameters()
+    params.SetRobotActiveJoints(robot)
+    params.SetGoalConfig(qgoal)
+    params.SetMaxIterations(max_planner_iterations)
+    params.SetPostProcessing('ParabolicSmoother', '<_nmaxiterations>{0}</_nmaxiterations>'.format(max_postprocessing_iterations))
+    success = rave_planner.InitPlan(robot, params)
+    if not success:
+        return None
+    # Plan a trajectory
+    traj = orpy.RaveCreateTrajectory(env, '')
+    status = rave_planner.PlanPath(traj)
+    if status != orpy.PlannerStatus.HasSolution:
+        return None
+    return traj
+
+
 class PickAndPlaceDemo(object):
-    """ 
+    """ A pick-and-place demo.
+
+    Parameters
+    ----------
+    load_path: str
+        Load path to scenario.
+    env: optional
+        OpenRAVE Environment.
+    verbose: bool, optional
+    execute_hw: bool, optional
+        Send trajectory to real robot.
     """
-    def __init__(self, load_path=None, env=None):
+    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False):
         assert load_path is not None
+        self.verbose = verbose
+        self.execute_hw = execute_hw
+        if self.verbose:
+            logging.basicConfig(level="DEBUG")
+        else:
+            logging.basicConfig(level="INFO")
         db = Database()
         _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
@@ -101,14 +138,37 @@ class PickAndPlaceDemo(object):
                 logger.warn("Unable to find a collision free solution.")
                 if qstart_nocol is None:
                     logger.warn("Reason: unable to reach this pose.")
+                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                    if cmd == "i":
+                        import IPython
+                        if IPython.get_ipython() is None:
+                            IPython.embed()
                 else:
                     logger.warn("Reason: collision (able to reach).")
                     self._robot.SetActiveDOFValues(qstart_nocol)
+                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                    if cmd == "i":
+                        import IPython
+                        if IPython.get_ipython() is None:
+                            IPython.embed()
             if fail:
                 logger.warn("Breaking from planning loop.")
                 break
-            traj0 = basemanip.MoveToHandPosition(matrices=[T_ee_start], outputtrajobj=True)
+
+            # Select a goal that is closest to current postion
+            qstarts = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+            qstart = None
+            dist = 10000
+            for q_ in qstarts:
+                dist_ = np.linalg.norm(q_ - self.get_robot().GetActiveDOFValues())
+                if dist_ < dist:
+                    qstart = q_
+                    dist = dist_
+
+            traj0 = plan_to_joint_configuration(self.get_robot(), qstart)
+            # traj0 = basemanip.MoveToHandPosition(matrices=[T_ee_start], outputtrajobj=True, maxtries=3)
             self.get_robot().WaitForController(0)
+            # import ipdb; ipdb.set_trace()
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
 
             # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
@@ -122,7 +182,7 @@ class PickAndPlaceDemo(object):
                                                      constraintfreedoms=[1, 1, 0, 0, 0, 0],
                                                      constraintmatrix=T_taskframe_world,
                                                      constrainttaskmatrix=T_ee_obj,
-                                                     constrainterrorthresh=0.5,
+                                                     constrainterrorthresh=0.8,
                                                      execute=False,
                                                      steplength=0.002)
             except orpy.planning_error, e:

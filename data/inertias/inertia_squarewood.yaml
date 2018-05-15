@@ -1,0 +1,7 @@
+unit: mm
+
+squarewood:
+  kind: cube
+  mass: 0.887
+  size: [150, 145, 47]
+  com_position: [0, 0, 23.5]

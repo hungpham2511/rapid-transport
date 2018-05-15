@@ -1,0 +1,7 @@
+unit: mm
+
+acrylic_cube1:
+  kind: cube
+  mass: 0.551
+  size: [213, 140, 25]
+  com_position: [0, 0, 12.5]

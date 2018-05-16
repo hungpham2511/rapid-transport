@@ -3,12 +3,32 @@ robot:  denso
     
 # Define object to transport
 objects:
+  - name: object4
+    object_profile: kindlebox_light
+    object_attach_to: denso_suction_cup
+    contact_profile: suctioncup_skirt_kindlebox_467795874a
+    contact_attach_to: denso_ft_sensor
+    T_link_object:
+      - [1, 0, 0, 0e-3]
+      - [0, -1, 0, 0]
+      - [0, 0, -1, 25.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [1, 0, 0, 0.5]
+      - [0, 1, 0, -0.4]
+      - [0, 0, 1, 0.04]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [1, 0, 0, 0.5]
+      - [0, 1, 0, +0.2]
+      - [0, 0, 1, -0.1]
+      - [0, 0, 0, 0]
 
   - name: object3
     object_profile: kindlebox
     object_attach_to: denso_suction_cup2
     contact_profile: suctioncup_skirt_kindlebox_467795874a
-    contact_attach_to: denso_ft_sensor
+    contact_attach_to: denso_ft_sensor2
     T_link_object:
       - [1, 0, 0, 0]
       - [0, 1, 0, 0]
@@ -29,7 +49,7 @@ objects:
     object_profile: kindlebox_light
     object_attach_to: denso_suction_cup
     contact_profile: suctioncup_skirt_kindlebox_467795874a
-    contact_attach_to: denso_ft_sensor
+    contact_attach_to: denso_ft_sensor2
     T_link_object:
       - [1, 0, 0, 0]
       - [0, 1, 0, 0]

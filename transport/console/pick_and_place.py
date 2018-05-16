@@ -115,6 +115,32 @@ class PickAndPlaceDemo(object):
     def get_qstart(self):
         return self._robot.GetActiveDOFValues()
 
+    def verify_transform(self, manip, T_ee_start):
+        "Check if T can be reach using manip."
+        # Check that the starting position can be reached
+        fail = False
+        qstart_col = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+        qstart_nocol = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.IgnoreEndEffectorCollisions)
+        if qstart_col is None:
+            fail = True
+            logger.warn("Unable to find a collision free solution.")
+            if qstart_nocol is None:
+                logger.warn("Reason: unable to reach this pose.")
+                cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                if cmd == "i":
+                    import IPython
+                    if IPython.get_ipython() is None:
+                        IPython.embed()
+            else:
+                logger.warn("Reason: collision (able to reach).")
+                self._robot.SetActiveDOFValues(qstart_nocol)
+                cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                if cmd == "i":
+                    import IPython
+                    if IPython.get_ipython() is None:
+                        IPython.embed()
+        return fail
+
     def run(self, method="ParabolicSmoother"):
         """ Run the demo.
         """
@@ -126,71 +152,68 @@ class PickAndPlaceDemo(object):
             manip = self.get_robot().SetActiveManipulator(manip_name)
             basemanip = orpy.interfaces.BaseManipulation(self.get_robot())
             Tstart = np.array(obj_d['T_start'])
-            logger.debug(Tstart)
             Tgoal = np.array(obj_d['T_goal'])
 
-            # Check that the starting position can be reached
-            T_ee_start = np.dot(Tstart, self.get_object(obj_d['name']).get_T_object_link())
-            qstart_col = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
-            qstart_nocol = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.IgnoreEndEffectorCollisions)
-            if qstart_col is None:
-                fail = True
-                logger.warn("Unable to find a collision free solution.")
-                if qstart_nocol is None:
-                    logger.warn("Reason: unable to reach this pose.")
-                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
-                    if cmd == "i":
-                        import IPython
-                        if IPython.get_ipython() is None:
-                            IPython.embed()
-                else:
-                    logger.warn("Reason: collision (able to reach).")
-                    self._robot.SetActiveDOFValues(qstart_nocol)
-                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
-                    if cmd == "i":
-                        import IPython
-                        if IPython.get_ipython() is None:
-                            IPython.embed()
-            if fail:
-                logger.warn("Breaking from planning loop.")
-                break
-
             # Select a goal that is closest to current postion
+            T_ee_start = np.dot(Tstart, self.get_object(obj_d['name']).get_T_object_link())
+            self.verify_transform(manip, T_ee_start)
             qstarts = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
             qstart = None
             dist = 10000
+            q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
             for q_ in qstarts:
-                dist_ = np.linalg.norm(q_ - self.get_robot().GetActiveDOFValues())
+                dist_ = np.linalg.norm(q_ - q_nominal)
                 if dist_ < dist:
                     qstart = q_
                     dist = dist_
 
-            traj0 = plan_to_joint_configuration(self.get_robot(), qstart)
-            # traj0 = basemanip.MoveToHandPosition(matrices=[T_ee_start], outputtrajobj=True, maxtries=3)
+            traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
+            self.get_robot().GetController().SetPath(traj0)
             self.get_robot().WaitForController(0)
-            # import ipdb; ipdb.set_trace()
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
 
-            # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
-            T_taskframe = np.eye(4)
-            T_taskframe[:3, 3] = Tstart[:3, 3]
-            T_taskframe_world = np.linalg.inv(T_taskframe)
-            T_ee_obj = np.linalg.inv(self.get_object(obj_d['name']).get_T_object_link())
+            # Compute goal transform
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
-            try:
-                traj1 = basemanip.MoveToHandPosition(matrices=[T_ee_goal], outputtrajobj=True,
-                                                     constraintfreedoms=[1, 1, 0, 0, 0, 0],
-                                                     constraintmatrix=T_taskframe_world,
-                                                     constrainttaskmatrix=T_ee_obj,
-                                                     constrainterrorthresh=0.8,
-                                                     execute=False,
-                                                     steplength=0.002)
-            except orpy.planning_error, e:
-                fail = True
-                logger.warn("Constraint planning fails.")
-                break
-            self.get_robot().GetController().SetPath(traj1)
-            self.get_robot().WaitForController(0)
+            self.verify_transform(manip, T_ee_goal)
+            # Select a goal that is closest to current postion
+            qgoals = manip.FindIKSolutions(T_ee_goal, orpy.IkFilterOptions.CheckEnvCollisions)
+            qgoal = None
+            dist = 10000
+            q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
+            for q_ in qgoals:
+                dist_ = np.linalg.norm(q_ - q_nominal)
+                if dist_ < dist:
+                    qgoal = q_
+                    dist = dist_
+
+            traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
+
+            ###  # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
+            # T_taskframe = np.eye(4)
+            # T_taskframe[:3, 3] = manip.GetTransform()[:3, 3] + np.r_[0, 0, 5e-2]
+            # T_taskframe_world = np.linalg.inv(T_taskframe)
+
+            # try:
+            #     # Constraint planning currently does not work.
+
+            #     traj1 = basemanip.MoveToHandPosition(matrices=[T_ee_goal], outputtrajobj=True,
+            #                                          constraintfreedoms=[1, 1, 0, 0, 0, 0],
+            #                                          constraintmatrix=T_taskframe_world,
+            #                                          constrainttaskmatrix=T_ee_obj,
+            #                                          constrainterrorthresh=0.1,
+            #                                          execute=False,
+            #                                          steplength=0.001)
+
+            #     # traj1 = basemanip.MoveToHandPosition(matrices=[T_ee_goal], outputtrajobj=True,
+            #     #                                      execute=False)
+
+            # except orpy.planning_error, e:
+            #     fail = True
+            #     logger.warn("Constraint planning fails.")
+            #     break
+
+            # self.get_robot().GetController().SetPath(traj1)
+            # self.get_robot().WaitForController(0)
 
             # Shortcutting
             with self.get_robot():
@@ -198,7 +221,7 @@ class PickAndPlaceDemo(object):
                 trajnew.deserialize(traj1.serialize())
                 params = orpy.Planner.PlannerParameters()
                 params.SetRobotActiveJoints(self.get_robot())
-                params.SetMaxIterations(100)
+                params.SetMaxIterations(500)
                 params.SetPostProcessing('', '')
                 planner = orpy.RaveCreatePlanner(self.get_env(), method)
                 success = planner.InitPlan(self.get_robot(), params)
@@ -209,11 +232,8 @@ class PickAndPlaceDemo(object):
                 if status == orpy.PlannerStatus.HasSolution:
                     logger.info("Shortcutting succeeds.")
                 else:
-                    logger.fatal("Shortcutting fails. Playing traj now to debug.")
-                    fail = True
-                    break
-                    # self.get_robot().GetController().SetPath(traj1)
-                    # self.get_robot().WaitForController(0)
+                    # fail = True
+                    logger.fatal("Shortcutting fails. Keep running")
 
             logger.info("Method: {:}, nb waypoints: {:d}, duration {:f}\n"
                         " Playing in 2 sec".format(method, trajnew.GetNumWaypoints(), trajnew.GetDuration()))
@@ -229,7 +249,9 @@ class PickAndPlaceDemo(object):
             self.get_robot().GetController().SetPath(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
-
+            
+            logger.info("Robot stops for 1 secs")
+            time.sleep(1)
         time.sleep(2)
         return not fail
 

@@ -27,6 +27,29 @@ def main(*args, **kwargs):
     demo.run()
 
 
+def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100, offset=0.01):
+    manip = robot.GetActiveManipulator()
+
+    # Pose on top of the desired pose
+    T_ee_top = np.array(T_ee_start)
+    T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
+
+    # Find a good final configuration
+    qgoals = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+    qgoal = None
+    dist = 10000
+    for q_ in qgoals:
+        dist_ = np.linalg.norm(q_ - q_nominal)
+        if dist_ < dist:
+            qgoal = q_
+            dist = dist_
+
+    # Plan trajectory to that point
+    traj0 = raveutils.planning.plan_to_joint_configuration(
+        robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
+    return traj0
+
+
 class PickAndPlaceDemo(object):
     """ A pick-and-place demo.
 
@@ -47,6 +70,7 @@ class PickAndPlaceDemo(object):
         self.slowdown = slowdown
         if self.verbose:
             setup_logging(level="DEBUG")
+            toppra.utils.setup_logging(level="DEBUG")
         else:
             setup_logging(level="INFO")
         db = Database()
@@ -175,7 +199,7 @@ class PickAndPlaceDemo(object):
             logger.debug("Extraction cost per loop {:f} / {:f}".format(t_elasped, self._dt))
             rospy.sleep(self._dt - t_elasped)
 
-    def run(self, method="ParabolicSmoother"):
+    def run(self, method="ParabolicSmoother", offset=0.01):
         """ Run the demo.
         """
         q_current = self.get_qstart()
@@ -184,30 +208,27 @@ class PickAndPlaceDemo(object):
         for obj_d in self._scenario['objects']:
             manip_name = obj_d["object_attach_to"]
             manip = self.get_robot().SetActiveManipulator(manip_name)
-            basemanip = orpy.interfaces.BaseManipulation(self.get_robot())
+            # basemanip = orpy.interfaces.BaseManipulation(self.get_robot())
             Tstart = np.array(obj_d['T_start'])
             Tgoal = np.array(obj_d['T_goal'])
-
-            # Select a goal that is closest to current postion
             T_ee_start = np.dot(Tstart, self.get_object(obj_d['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_start)
-            qstarts = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
-            qstart = None
-            dist = 10000
+            T_ee_top = np.array(T_ee_start)
+            T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
+
             q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
-            for q_ in qstarts:
-                dist_ = np.linalg.norm(q_ - q_nominal)
-                if dist_ < dist:
-                    qstart = q_
-                    dist = dist_
 
-            # traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
-            traj0 = raveutils.planning.plan_to_joint_configuration(self._robot, qstart,
-                                                                   max_ppiters=60, max_iters=100)
-
+            # Trajectory which first visit a pose that is on top of the given transform, then go down.
+            traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
             self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
+
+            traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
+            self.check_continue()
+            self.execute_trajectory(traj0b)
+            self.get_robot().WaitForController(0)
+
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Grabbing the object. Continue moving in 1 sec.")
             time.sleep(1.0)
@@ -232,6 +253,7 @@ class PickAndPlaceDemo(object):
             if self.check_trajectory_collision(traj1):
                 logger.fatal("There are collisions.")
             trajnew = traj1
+
             ###  # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
             # T_taskframe = np.eye(4)
             # T_taskframe[:3, 3] = manip.GetTransform()[:3, 3] + np.r_[0, 0, 5e-2]

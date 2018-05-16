@@ -30,3 +30,10 @@ def test_run(setup_demo, monkeypatch):
     monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
     demo, robot_name = setup_demo
     assert demo.run()
+
+
+def test_run_hw(setup, monkeypatch):
+    monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
+    demo = PickAndPlaceDemo("scenarios/test0.scenario.yaml", env=setup, execute_hw=True)
+    demo.view()
+    assert demo.run()

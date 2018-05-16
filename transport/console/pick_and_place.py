@@ -5,6 +5,13 @@ import numpy as np
 import yaml
 import logging
 
+try:
+    import raveutils
+    import rospy
+    from denso_control.controllers import JointPositionController
+except ImportError:
+    pass
+
 from ..utils import expand_and_join
 from ..profile_loading import Database
 from ..solidobject import SolidObject
@@ -33,10 +40,11 @@ class PickAndPlaceDemo(object):
     execute_hw: bool, optional
         Send trajectory to real robot.
     """
-    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False):
+    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=1.0 / 150, slowdown=1.0):
         assert load_path is not None
         self.verbose = verbose
         self.execute_hw = execute_hw
+        self.slowdown = slowdown
         if self.verbose:
             logging.basicConfig(level="DEBUG")
         else:
@@ -55,6 +63,11 @@ class PickAndPlaceDemo(object):
         self._env.Load(_env_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
         self._objects = []
+        n = rospy.init_node("pick_and_place_planner")
+        if self.execute_hw:
+            self.joint_controller = JointPositionController('denso')
+            self._robot.SetActiveDOFValues(self.joint_controller.get_joint_positions())
+        self._dt = dt
         # Load all objects to openRave
         for obj_d in self._scenario['objects']:
             obj = SolidObject.init_from_dict(self._robot, obj_d)
@@ -141,6 +154,25 @@ class PickAndPlaceDemo(object):
             logger.fatal("Robot is in collision!")
         return in_collision
 
+    def execute_trajectory(self, trajectory):
+        """ Execute the trajectory. 
+        
+        If execute_hw is true, also publish command message to ROS.
+        """
+        spec = trajectory.GetConfigurationSpecification()
+        duration = trajectory.GetDuration()
+        for t in np.arange(0, duration, self._dt * self.slowdown):
+            t_start = rospy.get_time()
+            data = trajectory.Sample(t)
+            q = spec.ExtractJointValues(data, self._robot, range(6), 0)
+            if self.execute_hw:
+                self.joint_controller.set_joint_positions(q)
+            self.get_robot().SetDOFValues(q)
+            self.get_env().UpdatePublishedBodies()
+            t_elasped = rospy.get_time() - t_start
+            logger.debug("Extraction cost per loop {:f} / {:f}".format(t_elasped, self._dt))
+            rospy.sleep(self._dt - t_elasped)
+
     def run(self, method="ParabolicSmoother"):
         """ Run the demo.
         """
@@ -167,9 +199,12 @@ class PickAndPlaceDemo(object):
                     qstart = q_
                     dist = dist_
 
-            traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
+            # traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
+            traj0 = raveutils.planning.plan_to_joint_configuration(self._robot, qstart,
+                                                                   max_ppiters=60, max_iters=100)
+            
             raw_input("[Enter] to run trajectory.")
-            self.get_robot().GetController().SetPath(traj0)
+            self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Grabbing the object. Continue moving in 1 sec.")
@@ -189,13 +224,12 @@ class PickAndPlaceDemo(object):
                     qgoal = q_
                     dist = dist_
 
-            traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
+            # traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
+            traj1 = raveutils.planning.plan_to_joint_configuration(self._robot, qgoal,
+                                                                   max_ppiters=60, max_iters=100)
             if self.check_trajectory_collision(traj1):
-                import IPython
-                if IPython.get_ipython() is None:
-                    IPython.embed()
+                logger.fatal("There are collisions.")
             trajnew = traj1
-
             ###  # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
             # T_taskframe = np.eye(4)
             # T_taskframe[:3, 3] = manip.GetTransform()[:3, 3] + np.r_[0, 0, 5e-2]
@@ -255,7 +289,7 @@ class PickAndPlaceDemo(object):
                 trajnew, self.get_robot(), additional_constraints=[contact_constraint])
 
             raw_input("[Enter] to run trajectory.")
-            self.get_robot().GetController().SetPath(traj1new)
+            self.execute_trajectory(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
             

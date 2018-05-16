@@ -20,7 +20,7 @@ def main():
     args = parser.parse_args()
     if args.which == "pick-demo":
         pick_and_place.main(load_path=args.scene, verbose=args.verbose,
-                            execute_hw=args.execute_hw)
+                            execute_hw=args.execute_hw, slowdown=args.slowdown)
 
 
     return 1

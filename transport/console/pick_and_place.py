@@ -62,6 +62,8 @@ class PickAndPlaceDemo(object):
         self._env.SetDebugLevel(2)
         self._env.Load(_env_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
+        self._robot.SetDOFVelocityLimits(self.slowdown * self._robot.GetDOFVelocityLimits())
+        self._robot.SetDOFAccelerationLimits(self.slowdown * self._robot.GetDOFAccelerationLimits())
         self._objects = []
         n = rospy.init_node("pick_and_place_planner")
         if self.execute_hw:
@@ -161,7 +163,7 @@ class PickAndPlaceDemo(object):
         """
         spec = trajectory.GetConfigurationSpecification()
         duration = trajectory.GetDuration()
-        for t in np.arange(0, duration, self._dt * self.slowdown):
+        for t in np.arange(0, duration, self._dt):
             t_start = rospy.get_time()
             data = trajectory.Sample(t)
             q = spec.ExtractJointValues(data, self._robot, range(6), 0)
@@ -202,8 +204,8 @@ class PickAndPlaceDemo(object):
             # traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
             traj0 = raveutils.planning.plan_to_joint_configuration(self._robot, qstart,
                                                                    max_ppiters=60, max_iters=100)
-            
-            raw_input("[Enter] to run trajectory.")
+
+            self.check_continue()
             self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
@@ -288,7 +290,7 @@ class PickAndPlaceDemo(object):
             traj1new = toppra.retime_active_joints_kinematics(
                 trajnew, self.get_robot(), additional_constraints=[contact_constraint])
 
-            raw_input("[Enter] to run trajectory.")
+            self.check_continue()
             self.execute_trajectory(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
@@ -298,3 +300,9 @@ class PickAndPlaceDemo(object):
         time.sleep(2)
         return not fail
 
+    def check_continue(self):
+        cmd = raw_input("[Enter] to execute, [q] to stop.")
+        if cmd == "q":
+            exit(42)
+        else:
+            return True

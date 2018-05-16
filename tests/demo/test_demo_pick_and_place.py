@@ -26,6 +26,7 @@ def test_init(setup_demo):
     assert env.GetKinBody("object2") is not None
 
 
-def test_run(setup_demo):
+def test_run(setup_demo, monkeypatch):
+    monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
     demo, robot_name = setup_demo
     assert demo.run()

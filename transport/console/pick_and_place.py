@@ -70,13 +70,8 @@ class PickAndPlaceDemo(object):
                 print 'IKFast {0} has been successfully generated'.format(iktype.name)
             rave_obj = self._env.GetKinBody(obj_d['name'])
             if self._env.CheckCollision(rave_obj):
-                
-
-        cmd = raw_input("Load finish. [Enter] to continue, [i] to drop to Ipython")
-        if cmd == "i":
-            import IPython
-            if IPython.get_ipython() is None:
-                IPython.embed()
+                logger.fatal("Initial collisions.")
+                import ipdb; ipdb.set_trace()
 
     def view(self):
         res = self._env.SetViewer('qtosg')
@@ -173,6 +168,7 @@ class PickAndPlaceDemo(object):
                     dist = dist_
 
             traj0 = basemanip.MoveActiveJoints(goal=qstart, outputtrajobj=True, execute=False)
+            raw_input("[Enter] to run trajectory.")
             self.get_robot().GetController().SetPath(traj0)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
@@ -258,6 +254,7 @@ class PickAndPlaceDemo(object):
             traj1new = toppra.retime_active_joints_kinematics(
                 trajnew, self.get_robot(), additional_constraints=[contact_constraint])
 
+            raw_input("[Enter] to run trajectory.")
             self.get_robot().GetController().SetPath(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))

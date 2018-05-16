@@ -3,6 +3,35 @@ from math import factorial
 from toppra.constraint import CanonicalLinearSecondOrderConstraint
 import os
 import matplotlib.pyplot as plt
+import logging
+
+
+logging_config = dict(
+    version = 1,
+    formatters = {
+        'f': {'format':
+              '[%(levelname)s] %(asctime)s %(name)s %(funcName)s: l%(lineno)d %(message)s',
+              'datefmt': "%H:%M:%S"
+        }
+        },
+    handlers = {
+        'h': {'class': 'logging.StreamHandler',
+              'formatter': 'f',
+        }
+        },
+    loggers = {
+        "transport": {
+            "handlers": ['h']
+        },
+    }
+)
+
+
+def setup_logging(level="INFO"):
+    logging.config.dictConfig(logging_config)
+    logger = logging.getLogger("transport")
+    logger.setLevel(level)
+
 
 def preview_plot(args):
     """ Preview data tuples given in args.

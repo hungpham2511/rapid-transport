@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-from ..utils import expand_and_join
+from ..utils import expand_and_join, setup_logging
 from ..profile_loading import Database
 from ..solidobject import SolidObject
 from ..toppra_constraints import create_object_transporation_constraint
@@ -46,9 +46,9 @@ class PickAndPlaceDemo(object):
         self.execute_hw = execute_hw
         self.slowdown = slowdown
         if self.verbose:
-            logging.basicConfig(level="DEBUG")
+            setup_logging(level="DEBUG")
         else:
-            logging.basicConfig(level="INFO")
+            setup_logging(level="INFO")
         db = Database()
         _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:

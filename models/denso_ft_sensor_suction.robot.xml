@@ -81,8 +81,8 @@
     <body name='suction_cup_holder' type="dynamic">
       <geom type="trimesh" modifiable="true">
         <diffuseColor> 0.69019608  0.76862745  0.87058824</diffuseColor>
-        <render>meshes/suction_cup/suction_cup_holder.stl 0.001</render>
-        <collision>meshes/suction_cup/suction_cup_holder.stl 0.001</collision>
+        <render>meshes/suction_cup/suction_cup_holder2.stl 0.001</render>
+        <collision>meshes/suction_cup/suction_cup_holder2.stl 0.001</collision>
       </geom>
       <offsetfrom>ati_ft_sensor</offsetfrom>
       <rotationaxis>0 0 1 -90</rotationaxis>
@@ -111,6 +111,24 @@
       <body>suction_head</body>
       <limits>0 0</limits>
     </joint>
+
+    <body name="skirt" type="dynamic">
+      <geom type="trimesh" modifiable="true">
+        <diffuseColor> 0.43921569  0.50196078  0.56470588 </diffuseColor>
+        <render>meshes/suction_cup/skirtv4.stl 0.001</render>
+        <collision>meshes/suction_cup/skirtv4.stl 0.001</collision>
+      </geom>
+      <offsetfrom>suction_head</offsetfrom>
+      <rotationaxis>0 1 0 180</rotationaxis>
+      <!-- <rotationaxis>0 1 0 90</rotationaxis> -->
+      <translation>0.0 0.0 0.033 </translation>
+    </body>
+     <joint name="joint_skirt" type="hinge" enable="false">
+      <body>suction_head</body>
+      <body>skirt</body>
+      <limits>0 0</limits>
+    </joint>
+   
   </kinbody>
 
   <!-- Define the manipulator -->
@@ -126,8 +144,6 @@
     <effector>suction_head</effector>
     <!-- translation 1: end of the alum piece -->
     <translation>0 0 0.043</translation>  
-    <!-- translation 2: end of the new, bigger suction cup -->
-    <!-- <translation>0 0 13e-3</translation> -->
   </manipulator>
 
   <!-- A slightly longer manipulator -->
@@ -135,6 +151,8 @@
     <base>link0</base>
     <effector>suction_head</effector>
     <translation>0 0 0.044</translation>  
+    <!-- translation 2: end of the new, bigger suction cup -->
+    <translation>0 0 5.8e-3</translation>
   </manipulator>
 
   <adjacent>link0 rear_connector</adjacent>

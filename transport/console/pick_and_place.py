@@ -68,6 +68,15 @@ class PickAndPlaceDemo(object):
                 print 'Generating IKFast {0}. It will take few minutes...'.format(iktype.name)
                 ikmodel.autogenerate()
                 print 'IKFast {0} has been successfully generated'.format(iktype.name)
+            rave_obj = self._env.GetKinBody(obj_d['name'])
+            if self._env.CheckCollision(rave_obj):
+                
+
+        cmd = raw_input("Load finish. [Enter] to continue, [i] to drop to Ipython")
+        if cmd == "i":
+            import IPython
+            if IPython.get_ipython() is None:
+                IPython.embed()
 
     def view(self):
         res = self._env.SetViewer('qtosg')
@@ -122,6 +131,21 @@ class PickAndPlaceDemo(object):
                         IPython.embed()
         return fail
 
+    def check_trajectory_collision(self, traj):
+        spec = traj.GetConfigurationSpecification()
+        in_collision = False
+        for i in range(traj.GetNumWaypoints()):
+            data = traj.GetWaypoint(i)
+            q = spec.ExtractJointValues(data, self._robot, range(6), 0)
+            with self._robot:
+                self._robot.SetActiveDOFValues(q)
+                logger.debug("In collision = {:}".format(self._env.CheckCollision(self._robot)))
+                if self._env.CheckCollision(self._robot):
+                    in_collision = True
+        if in_collision:
+            logger.fatal("Robot is in collision!")
+        return in_collision
+
     def run(self, method="ParabolicSmoother"):
         """ Run the demo.
         """
@@ -152,6 +176,8 @@ class PickAndPlaceDemo(object):
             self.get_robot().GetController().SetPath(traj0)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
+            logger.info("Grabbing the object. Continue moving in 1 sec.")
+            time.sleep(1.0)
 
             # Compute goal transform
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
@@ -168,6 +194,11 @@ class PickAndPlaceDemo(object):
                     dist = dist_
 
             traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
+            if self.check_trajectory_collision(traj1):
+                import IPython
+                if IPython.get_ipython() is None:
+                    IPython.embed()
+            trajnew = traj1
 
             ###  # constraint motion planning, {task frame}:={obj}, {obj frame} = {obj}
             # T_taskframe = np.eye(4)
@@ -196,25 +227,25 @@ class PickAndPlaceDemo(object):
             # self.get_robot().GetController().SetPath(traj1)
             # self.get_robot().WaitForController(0)
 
-            # Shortcutting
-            with self.get_robot():
-                trajnew = orpy.RaveCreateTrajectory(self.get_env(), "")
-                trajnew.deserialize(traj1.serialize())
-                params = orpy.Planner.PlannerParameters()
-                params.SetRobotActiveJoints(self.get_robot())
-                params.SetMaxIterations(500)
-                params.SetPostProcessing('', '')
-                planner = orpy.RaveCreatePlanner(self.get_env(), method)
-                success = planner.InitPlan(self.get_robot(), params)
+            # # Shortcutting
+            # with self.get_robot():
+            #     trajnew = orpy.RaveCreateTrajectory(self.get_env(), "")
+            #     trajnew.deserialize(traj1.serialize())
+            #     params = orpy.Planner.PlannerParameters()
+            #     params.SetRobotActiveJoints(self.get_robot())
+            #     params.SetMaxIterations(500)
+            #     params.SetPostProcessing('', '')
+            #     planner = orpy.RaveCreatePlanner(self.get_env(), method)
+            #     success = planner.InitPlan(self.get_robot(), params)
 
-                if success:
-                    status = planner.PlanPath(trajnew)
+            #     if success:
+            #         status = planner.PlanPath(trajnew)
 
-                if status == orpy.PlannerStatus.HasSolution:
-                    logger.info("Shortcutting succeeds.")
-                else:
-                    # fail = True
-                    logger.fatal("Shortcutting fails. Keep running")
+            #     if status == orpy.PlannerStatus.HasSolution:
+            #         logger.info("Shortcutting succeeds.")
+            #     else:
+            #         # fail = True
+            #         logger.fatal("Shortcutting fails. Keep running")
 
             logger.info("Method: {:}, nb waypoints: {:d}, duration {:f}\n"
                         " Playing in 2 sec".format(method, trajnew.GetNumWaypoints(), trajnew.GetDuration()))

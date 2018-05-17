@@ -46,6 +46,54 @@ bigskirt_squarewood:
   position: [0, 0, 0]
   raw_data: [bigskirt_squarewood]
   volume: 673.47717
+bigskirt_squarewood2:
+  attached_to_manipulator: denso_ft_sensor
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+    New one.
+  id: bigskirt_squarewood2
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [bigskirt_squarewood2]
+bigskirt_squarewood2_145df2bcae:
+  N_faces: 2269
+  N_vertices: 51
+  arg_N_samples: 200
+  arg_N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_squarewood2_145df2bcae.npz
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+    New one.
+  generated_from: bigskirt_squarewood2
+  generated_on: '2018-05-17 19:07:39.188463'
+  id: bigskirt_squarewood2_145df2bcae
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 70.245406
+bigskirt_squarewood_145df2bcae:
+  N_faces: 2326
+  N_vertices: 51
+  arg_N_samples: 200
+  arg_N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_squarewood_145df2bcae.npz
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+  generated_from: bigskirt_squarewood
+  generated_on: '2018-05-17 21:08:59.086347'
+  id: bigskirt_squarewood_145df2bcae
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 310.08578
 bigskirt_squarewood_177f83d2fb:
   N_faces: 287
   N_vertices: 19
@@ -64,6 +112,24 @@ bigskirt_squarewood_177f83d2fb:
   position: [0, 0, 0]
   strategy: strategy10
   volume: 204.03504
+bigskirt_squarewood_9a9ce68dfa:
+  N_faces: 2192
+  N_vertices: 49
+  arg_N_samples: 300
+  arg_N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigskirt_squarewood_9a9ce68dfa.npz
+  description: Contact between the big suction cup with purple skirt and the squarewood.
+  generated_from: bigskirt_squarewood
+  generated_on: '2018-05-17 21:25:30.696003'
+  id: bigskirt_squarewood_9a9ce68dfa
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 376.96628
 contact1:
   N_faces: 550725
   N_vertices: 4968

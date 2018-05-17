@@ -15,7 +15,7 @@ def main():
     parse.add_argument('-o', '--object', help='Id of the object to transport', required=True)
     parse.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")
     parse.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
-    parse.add_argument('-r', '--robot', help='Robot specification.', required=False, default="suctioncup1")
+    parse.add_argument('-r', '--robot', help='Robot specification. Contain path to openrave robot model, velocity and acceleration limits.', required=False, default="suctioncup1")
     parse.add_argument('-l', '--algorithm', help='Algorithm specification.', default="topp_fast")
     parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")

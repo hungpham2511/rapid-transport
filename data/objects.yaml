@@ -6,6 +6,22 @@
 # the manipulator frame. These two fields are deprecated. Programs
 # should now require explicit value of T_link_object.
 
+optitrack_box:
+  description: The carton box used to carry an optitrack camera.
+  attached_to_manipulator: denso_suction_cup2
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/optitrack_box.xml
+  mass: 0.224
+  local_inertia:
+    - [ 1.17e-3, 0,        0     ]
+    - [ 0,        1.82e-3, 0     ]
+    - [ 0,        0,       3.22e-3]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
+
 squarewood:
   description: The square wood block.
   attached_to_manipulator: denso_suction_cup2

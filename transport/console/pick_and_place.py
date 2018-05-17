@@ -23,8 +23,12 @@ logger = logging.getLogger(__name__)
 def main(*args, **kwargs):
     demo = PickAndPlaceDemo(*args, **kwargs)
     demo.view()
-    print "Starting demo.."
-    demo.run()
+    logger.info("Starting demo..")
+    success = demo.run()
+    if success:
+        logger.info("Pick and place demo terminates successfully!")
+    else:
+        logger.fatal("Pick and place demo fails!")
 
 
 def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100):
@@ -183,6 +187,7 @@ class PickAndPlaceDemo(object):
                     import ipdb; ipdb.set_trace()
             else:
                 logger.fatal("Reason: collision (robot is able to reach this transform).")
+                logger.fatal("Collision might be due to grabbed object only. Check viewer.")
                 with self._robot:
                     self._robot.SetActiveDOFValues(qstart_nocol)
                     self._env.UpdatePublishedBodies()

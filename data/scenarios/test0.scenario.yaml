@@ -47,9 +47,9 @@ objects:
 
   - name: object2
     object_profile: kindlebox_light
-    object_attach_to: denso_suction_cup
+    object_attach_to: denso_suction_cup2
     contact_profile: suctioncup_skirt_kindlebox_467795874a
-    contact_attach_to: denso_ft_sensor2
+    contact_attach_to: denso_ft_sensor
     T_link_object:
       - [1, 0, 0, 0]
       - [0, 1, 0, 0]
@@ -68,7 +68,7 @@ objects:
 
   - name: object1
     object_profile: kindlebox_light
-    object_attach_to: denso_suction_cup
+    object_attach_to: denso_suction_cup2
     T_link_object:
       - [1, 0, 0, 0]
       - [0, 1, 0, 0]

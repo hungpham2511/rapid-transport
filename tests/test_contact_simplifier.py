@@ -1,6 +1,7 @@
 import transport
 import pytest
 import logging
+import transport.console.simplify_contact as simplify_contact
 
 logging.basicConfig(level="DEBUG")
 
@@ -31,3 +32,15 @@ def test_basic(contact_fixture):
     cs = transport.ContactSimplifier(robot, contact, solid_object, N_samples=50, N_vertices=15)
     cs_new = cs.simplify(verbose=True)
     assert isinstance(cs_new, transport.Contact)
+
+
+def test_simplify_contact_main(envcage, monkeypatch):
+    "Test the simplify wrench script."
+    monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
+    res = simplify_contact.main(env=envcage, contact_id="suctioncup_kindlebox2_fortesting",
+                                object_id="kindleboox_light", attach="denso_suction_cup",
+                                T_link_object="[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 3.5e-3], [0, 0, 0, 1]]",
+                                robot_id="suctioncup1",
+                                verbose=True)
+    assert res is True
+    

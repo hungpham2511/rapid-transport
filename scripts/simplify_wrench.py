@@ -11,6 +11,7 @@ import argparse, yaml, os
 import openravepy as orpy
 from datetime import datetime
 
+
 def preview_plot(args):
     """ Preview data tuples given in args.
     """
@@ -132,7 +133,7 @@ def strategy9(ws_all, N_vertices_max=100, N_samples=1000):
 
 
 def strategy10(ws_all, contact_profile, object_profile, robot_profile,
-               N_vertices_max=50, Ad_T_wrench_transform=np.eye(6), N_samples=100):
+               N_vertices_max=50, Ad_T_wrench_transform=np.eye(6), N_samples=100, shrink=True):
     """ Simplify data points using DYNAMICALLY GUIDED EXPANSION.
 
     Parameters
@@ -150,6 +151,11 @@ def strategy10(ws_all, contact_profile, object_profile, robot_profile,
     -------
     vertices: (M,6)array
     """
+
+    # if shrink:
+    #     w_mean = np.mean(ws_all, axis=0)
+    #     ws_all = w_mean + (ws_all - w_mean) *  0.99
+
     hull_full = toppra_app.poly_contact.ConvexHull(ws_all)
     A, b = hull_full.get_halfspaces()
     print(hull_full.report())
@@ -182,7 +188,7 @@ def strategy10(ws_all, contact_profile, object_profile, robot_profile,
     trial = 0
     while len(ws_thin) < N_samples:
         trial += 1
-        qdd_sam = toppra_app.utils.sample_uniform(1, 10, 6)[0]
+        qdd_sam = toppra_app.utils.sample_uniform(1, 5, 6)[0]
         qd_sam = toppra_app.utils.sample_uniform(1, 2, 6)[0]
         q_sam = toppra_app.utils.sample_uniform(1, 3, 6)[0]
         T_world_contact = contact.compute_frame_transform(q_sam)

@@ -11,7 +11,7 @@ import coloredlogs
 def setup_logging(level="INFO"):
     "Create a stream handler which outputs msg to console"
     coloredlogs.install(logger=logging.getLogger("transport"), level=level,
-                        fmt="%(levelname)s %(asctime)s [%(funcName)s: %(lineno)d] %(message)s",
+                        fmt="%(levelname)s %(asctime)s (%(name)s) [%(funcName)s: %(lineno)d] %(message)s",
                         datefmt="%H:%M:%S", milliseconds=True)
 
 def preview_plot(args):

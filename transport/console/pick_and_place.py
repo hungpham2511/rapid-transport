@@ -27,12 +27,27 @@ def main(*args, **kwargs):
     demo.run()
 
 
-def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100, offset=0.01):
-    manip = robot.GetActiveManipulator()
+def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100):
+    """ Planning function
 
-    # Pose on top of the desired pose
-    T_ee_top = np.array(T_ee_start)
-    T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
+    Parameters
+    ----------
+    robot: openravepy.Robot
+    T_ee_start: (4,4)array
+        Desired active manipulator transform.
+    q_nominal: (dof,)array
+        A desired/preferred configuration to achieve the goal transform.
+    max_ppiters: int
+        Shortcutting iterations.
+    max_iters: int
+        Planning iterations.
+
+    Returns
+    -------
+    traj: openravepy.Trajectory
+
+    """
+    manip = robot.GetActiveManipulator()
 
     # Find a good final configuration
     qgoals = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
@@ -73,6 +88,7 @@ class PickAndPlaceDemo(object):
             toppra.utils.setup_logging(level="DEBUG")
         else:
             setup_logging(level="INFO")
+            toppra.utils.setup_logging(level="INFO")
         db = Database()
         _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
@@ -110,7 +126,8 @@ class PickAndPlaceDemo(object):
             rave_obj = self._env.GetKinBody(obj_d['name'])
             if self._env.CheckCollision(rave_obj):
                 logger.fatal("Initial collisions.")
-                import ipdb; ipdb.set_trace()
+                self.view()
+                self.check_continue()
 
     def view(self):
         res = self._env.SetViewer('qtosg')
@@ -199,8 +216,12 @@ class PickAndPlaceDemo(object):
             logger.debug("Extraction cost per loop {:f} / {:f}".format(t_elasped, self._dt))
             rospy.sleep(self._dt - t_elasped)
 
-    def run(self, method="ParabolicSmoother", offset=0.01):
+    def run(self, offset=0.01):
         """ Run the demo.
+
+        For each object, the robot first move to a pose that is directly on top of it. Afterward, it moves down.
+        Next, it grabs the object to be transported. Finally, it moves to another configuration.
+
         """
         q_current = self.get_qstart()
         self.get_robot().SetActiveDOFValues(q_current)
@@ -228,10 +249,15 @@ class PickAndPlaceDemo(object):
             self.check_continue()
             self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
-
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Grabbing the object. Continue moving in 1 sec.")
             time.sleep(1.0)
+
+            # Trajectory which first visit a pose that is on top of the given transform, then go down.
+            traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
+            self.check_continue()
+            self.execute_trajectory(traj0c)
+            self.get_robot().WaitForController(0)
 
             # Compute goal transform
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
@@ -301,8 +327,6 @@ class PickAndPlaceDemo(object):
             #         # fail = True
             #         logger.fatal("Shortcutting fails. Keep running")
 
-            logger.info("Method: {:}, nb waypoints: {:d}, duration {:f}\n"
-                        " Playing in 2 sec".format(method, trajnew.GetNumWaypoints(), trajnew.GetDuration()))
             logger.info("Original traj nb waypoints: {:d}".format(traj1.GetNumWaypoints()))
 
             # Retime now

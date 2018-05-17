@@ -2,8 +2,9 @@
 # NOTE
 #rave_model: use only for collision checking.
 
-#position and orientation are of the transformation of the object in
-# the manipulator frame.
+# position and orientation are of the transformation of the object in
+# the manipulator frame. These two fields are deprecated. Programs
+# should now require explicit value of T_link_object.
 
 squarewood:
   description: The square wood block.
@@ -29,9 +30,9 @@ squarewood:
 
 bluenb:
   description: The blue PaperLuxe book.
-  attached_to_manipulator: denso_suction_cup
+  attached_to_manipulator: denso_suction_cup2
   attached_to_robot: denso_ft_sensor_suction.robot.xml
-  rave_model: objects/kindle_box.xml
+  rave_model: objects/bluenb.xml
   mass: 0.551
   local_inertia:
     - [ 9.28e-4, 0,        0     ]
@@ -40,13 +41,14 @@ bluenb:
   T_object_model:
     - [1, 0, 0, 0]
     - [0, 1, 0, 0]
-    - [0, 0, 1, 0.01]
+    - [0, 0, 1, 0]
     - [0, 0, 0, 1]
-  position: [0, 0, 12.5e-3]
-  orientation:
-    - [1, 0, 0]
-    - [0, -1, 0]
-    - [0, 0, -1]
+
+  # position: [0, 0, 12.5e-3]
+  # orientation:
+  #   - [1, 0, 0]
+  #   - [0, -1, 0]
+  #   - [0, 0, -1]
 
 # bluenb is attached to denso_suction_cup
 # The usual transformation is
@@ -65,7 +67,7 @@ kindlebox_light:
   T_object_model:
     - [1, 0, 0, 0]
     - [0, 1, 0, 0]
-    - [0, 0, 1, 0.01]
+    - [0, 0, 1, 0.003]
     - [0, 0, 0, 1]
 
 kindlebox:

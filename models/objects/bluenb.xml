@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Kinbody name="heavy_alum_piece">
+<Kinbody name="bluenb">
  <Body name="Body1" type="dynamic">
    <Mass type="mimicgeom">
      <density>1000</density>
    </Mass>
    <Geom type="box">
-     <Translation>0 0 1e-3</Translation>
-     <Extents>87e-3 64e-3 14e-3</Extents>
-     <diffuseColor>0.25 0.25 0.25</diffuseColor>
+     <Extents>106.5e-3 70e-3 12.5e-3</Extents>
+     <diffuseColor>0.2 1.0 1.0</diffuseColor>
    </Geom>
  </Body>
 </Kinbody>

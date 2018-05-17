@@ -47,21 +47,32 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
     traj: openravepy.Trajectory
 
     """
-    manip = robot.GetActiveManipulator()
+    all_grabbed = robot.GetGrabbed()
+    robot.ReleaseAllGrabbed()
+    with robot:
+        manip = robot.GetActiveManipulator()
 
-    # Find a good final configuration
-    qgoals = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
-    qgoal = None
-    dist = 10000
-    for q_ in qgoals:
-        dist_ = np.linalg.norm(q_ - q_nominal)
-        if dist_ < dist:
-            qgoal = q_
-            dist = dist_
+        # Find a good final configuration
+        qgoals = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+        qgoal = None
+        dist = 10000
+        for q_ in qgoals:
+            dist_ = np.linalg.norm(q_ - q_nominal)
+            if dist_ < dist:
+                qgoal = q_
+                dist = dist_
+        if qgoal is None:
+            logger.fatal("Unable to find a collision free solution.")
+            cmd = raw_input("[Enter] to cont, [i] for ipdb")
+            if cmd == "i":
+                import ipdb; ipdb.set_trace()
+            return None
 
-    # Plan trajectory to that point
-    traj0 = raveutils.planning.plan_to_joint_configuration(
-        robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
+        # Plan trajectory to that point
+        traj0 = raveutils.planning.plan_to_joint_configuration(
+            robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
+    for body in all_grabbed:
+        robot.Grab(body)
     return traj0
 
 
@@ -125,7 +136,7 @@ class PickAndPlaceDemo(object):
                 print 'IKFast {0} has been successfully generated'.format(iktype.name)
             rave_obj = self._env.GetKinBody(obj_d['name'])
             if self._env.CheckCollision(rave_obj):
-                logger.fatal("Initial collisions.")
+                logger.fatal("Object {:} is in collision.".format(rave_obj.GetName()))
                 self.view()
                 self.check_continue()
 
@@ -164,22 +175,20 @@ class PickAndPlaceDemo(object):
         qstart_nocol = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.IgnoreEndEffectorCollisions)
         if qstart_col is None:
             fail = True
-            logger.warn("Unable to find a collision free solution.")
+            logger.fatal("Unable to find a collision free solution.")
             if qstart_nocol is None:
-                logger.warn("Reason: unable to reach this pose.")
+                logger.fatal("Reason: unable to reach this pose.")
                 cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
                 if cmd == "i":
-                    import IPython
-                    if IPython.get_ipython() is None:
-                        IPython.embed()
+                    import ipdb; ipdb.set_trace()
             else:
-                logger.warn("Reason: collision (able to reach).")
-                self._robot.SetActiveDOFValues(qstart_nocol)
-                cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
-                if cmd == "i":
-                    import IPython
-                    if IPython.get_ipython() is None:
-                        IPython.embed()
+                logger.fatal("Reason: collision (robot is able to reach this transform).")
+                with self._robot:
+                    self._robot.SetActiveDOFValues(qstart_nocol)
+                    self._env.UpdatePublishedBodies()
+                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                    if cmd == "i":
+                        import ipdb; ipdb.set_trace()
         return fail
 
     def check_trajectory_collision(self, traj):
@@ -202,6 +211,8 @@ class PickAndPlaceDemo(object):
         
         If execute_hw is true, also publish command message to ROS.
         """
+        if trajectory is None:
+            return False
         spec = trajectory.GetConfigurationSpecification()
         duration = trajectory.GetDuration()
         for t in np.arange(0, duration, self._dt):
@@ -215,6 +226,7 @@ class PickAndPlaceDemo(object):
             t_elasped = rospy.get_time() - t_start
             logger.debug("Extraction cost per loop {:f} / {:f}".format(t_elasped, self._dt))
             rospy.sleep(self._dt - t_elasped)
+        return True
 
     def run(self, offset=0.01):
         """ Run the demo.
@@ -242,12 +254,12 @@ class PickAndPlaceDemo(object):
             # Trajectory which first visit a pose that is on top of the given transform, then go down.
             traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
-            self.execute_trajectory(traj0)
+            fail = not self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
 
             traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
-            self.execute_trajectory(traj0b)
+            fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
             self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Grabbing the object. Continue moving in 1 sec.")
@@ -256,26 +268,30 @@ class PickAndPlaceDemo(object):
             # Trajectory which first visit a pose that is on top of the given transform, then go down.
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
-            self.execute_trajectory(traj0c)
+            fail = not self.execute_trajectory(traj0c)
             self.get_robot().WaitForController(0)
+
 
             # Compute goal transform
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_goal)
-            # Select a goal that is closest to current postion
-            qgoals = manip.FindIKSolutions(T_ee_goal, orpy.IkFilterOptions.CheckEnvCollisions)
-            qgoal = None
-            dist = 10000
             q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
-            for q_ in qgoals:
-                dist_ = np.linalg.norm(q_ - q_nominal)
-                if dist_ < dist:
-                    qgoal = q_
-                    dist = dist_
+            traj1 = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=200, max_iters=100)
 
-            # traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
-            traj1 = raveutils.planning.plan_to_joint_configuration(self._robot, qgoal,
-                                                                   max_ppiters=60, max_iters=100)
+            # # Select a goal that is closest to current postion
+            # qgoals = manip.FindIKSolutions(T_ee_goal, orpy.IkFilterOptions.CheckEnvCollisions)
+            # qgoal = None
+            # dist = 10000
+            # for q_ in qgoals:
+            #     dist_ = np.linalg.norm(q_ - q_nominal)
+            #     if dist_ < dist:
+            #         qgoal = q_
+            #         dist = dist_
+
+            # # traj1 = basemanip.MoveActiveJoints(goal=qgoal, outputtrajobj=True, execute=False)
+            # traj1 = raveutils.planning.plan_to_joint_configuration(self._robot, qgoal,
+            #                                                        max_ppiters=60, max_iters=100)
+
             if self.check_trajectory_collision(traj1):
                 logger.fatal("There are collisions.")
             trajnew = traj1
@@ -337,11 +353,10 @@ class PickAndPlaceDemo(object):
                 trajnew, self.get_robot(), additional_constraints=[contact_constraint])
 
             self.check_continue()
-            self.execute_trajectory(traj1new)
+            fail = not self.execute_trajectory(traj1new)
             self.get_robot().WaitForController(0)
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
-            
-            logger.info("Robot stops for 1 secs")
+            logger.info("Releasing the object. Robot stops for 1 secs")
             time.sleep(1)
         time.sleep(2)
         return not fail

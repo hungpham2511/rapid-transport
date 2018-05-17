@@ -2,9 +2,8 @@ import pytest, time
 import numpy as np
 from transport.console.pick_and_place import PickAndPlaceDemo
 import openravepy as orpy
-
-import logging
-logging.basicConfig(level="DEBUG")
+import transport
+transport.utils.setup_logging("DEBUG")
 
 
 @pytest.fixture(scope="module", params=[

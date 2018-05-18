@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import logging
 import coloredlogs
 
+logger = logging.getLogger(__name__)
+
 
 def setup_logging(level="INFO"):
     "Create a stream handler which outputs msg to console"
@@ -14,22 +16,42 @@ def setup_logging(level="INFO"):
                         fmt="%(levelname)s %(asctime)s (%(name)s) [%(funcName)s: %(lineno)d] %(message)s",
                         datefmt="%H:%M:%S", milliseconds=True)
 
-def preview_plot(args):
-    """ Preview data tuples given in args.
 
-    Each args is (points, marker, size)
+
+def preview_plot(args, dur=3):
+    """Preview data tuples given in args.
+
+    Each argument in `args` is (points, marker, size).
+
+    Each `points` is a (N,6) float array. The first three dimensions
+    are for torque and the last three dimensions are for force.
+
+    Parameters
+    ----------
+    args: list of ((N,d)array, marker, size)
     """
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(2, 3)
     axs[0, 0].set_title('tau_x vs tau_z')
     axs[0, 1].set_title('tau_y vs tau_z')
+    axs[0, 2].set_title('tau_x vs tau_y')
     axs[1, 0].set_title('f_x vs f_z')
     axs[1, 1].set_title('f_y vs f_z')
+    axs[1, 2].set_title('f_x vs f_y')
     for ws_all, marker, size in args:
         axs[0, 0].scatter(ws_all[:, 0], ws_all[:, 2], marker=marker, s=size)
         axs[0, 1].scatter(ws_all[:, 1], ws_all[:, 2], marker=marker, s=size)
+        axs[0, 2].scatter(ws_all[:, 0], ws_all[:, 1], marker=marker, s=size)
 
         axs[1, 0].scatter(ws_all[:, 3], ws_all[:, 5], marker=marker, s=size)
         axs[1, 1].scatter(ws_all[:, 4], ws_all[:, 5], marker=marker, s=size)
+        axs[1, 2].scatter(ws_all[:, 3], ws_all[:, 4], marker=marker, s=size)
+
+    # Setup close figure callback
+    logger.debug("Showing figure, closing in {:.3f} seconds".format(dur))
+    timer = fig.canvas.new_timer(interval=int(1000 * dur))
+    timer.add_callback(lambda: plt.close(fig))
+    timer.start()
+    plt.tight_layout()
     plt.show()
 
 

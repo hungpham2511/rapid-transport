@@ -61,7 +61,7 @@ class ContactSimplifier(object):
         self._contact.F_local = F
         self._contact.g_local = g
 
-    def simplify(self, verbose=False):
+    def simplify(self):
         """ Simplify contact.
 
         Returns
@@ -87,14 +87,17 @@ class ContactSimplifier(object):
 
         # %% Polyhedral expansion
         vca_indices = poly_contact.vertex_component_analysis(self._ws_all)
-
+        logger.debug("Generate initial vertices with vca!")
         vertices = self._ws_all[vca_indices].tolist()
         vertices_index = list(vca_indices)
         N_vertices = -1
         while N_vertices < self._N_vertices:
+            logger.debug("[Projection] N_vertices={:d}".format(N_vertices))
+            logger.debug("[Projection] Generate new convex hull")
             hull = poly_contact.ConvexHull(vertices)
             N_vertices = hull.vertices.shape[0]
 
+            logger.debug("[Projection] Select a face to expand")
             A, b = hull.get_halfspaces()
             # Select face to expand
             face_to_expand = None
@@ -108,7 +111,7 @@ class ContactSimplifier(object):
 
             if face_to_expand is None:
                 # This mean all red vertices have been found
-                print "Cover inner set!"
+                logger.info("Cover inner set!")
                 break
             else:
                 opt_vertex_index = np.argmax(self._ws_all.dot(A[face_to_expand]))
@@ -117,7 +120,8 @@ class ContactSimplifier(object):
             vertices_index.append(opt_vertex_index)
         vertices = np.array(vertices)
         hull = poly_contact.ConvexHull(vertices)
-        if verbose:
+
+        if self._verbose:
             fig, axs = plt.subplots(2, 2)
             to_plot = (
                 (0, 1, axs[0, 0]),
@@ -137,4 +141,4 @@ class ContactSimplifier(object):
         new_contact = self._contact.clone()
         new_contact.F_local = A
         new_contact.g_local = b
-        return new_contact
+        return new_contact, hull

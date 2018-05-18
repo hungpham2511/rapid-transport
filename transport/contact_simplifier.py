@@ -7,7 +7,6 @@ import openravepy as orpy
 from datetime import datetime
 
 from .profile_loading import Database
-from .utils import load_data_ati_log, preview_plot
 from .poly_contact import ConvexHull
 
 from . import utils
@@ -49,13 +48,13 @@ class ContactSimplifier(object):
         logger.info("Start loading data points.")
         for file_name in self._contact.get_raw_data():
             file_dir = os.path.join(db.get_contact_data_dir(), file_name)
-            ws_ = load_data_ati_log(file_dir)
+            ws_ = utils.load_data_ati_log(file_dir)
             ws_list.append(ws_)
         ws_all = np.vstack(ws_list)
         self._ws_all = ws_all
         logger.info("Finish loading data points.")
         if self._verbose:
-            preview_plot([[ws_all, 'x', 0.2]])
+            utils.preview_plot([[ws_all, 'x', {}]])
         hull_full = ConvexHull(ws_all)
         F, g = hull_full.get_halfspaces()
         self._contact.F_local = F
@@ -69,21 +68,21 @@ class ContactSimplifier(object):
         new_contact: Contact
         """
         # Sample points
-        logger.info("Start sampling")
-        ws_thin = []
+        logger.info("Start sampling wrenches for guidance.")
+        ws_sample = []
         trial = 0
-        while len(ws_thin) < self._N_samples:
+        while len(ws_sample) < self._N_samples:
             trial += 1
             qdd_sam, qd_sam = utils.sample_uniform(2, 0.5, 6)
             q_sam = utils.sample_uniform(1, 3, 6)[0]
             T_world_contact = self._contact.compute_frame_transform(q_sam)
             w_sam = self._solid_object.compute_inverse_dyn(q_sam, qd_sam, qdd_sam, T_world_contact)
             if np.all(self._contact.F_local.dot(w_sam) - self._contact.g_local <= 0):
-                ws_thin.append(w_sam)
-        ws_thin = np.array(ws_thin)
+                ws_sample.append(w_sam)
+        ws_sample = np.array(ws_sample)
         logger.info("Finish sampling ({:d} trials / {:d} samples)".format(trial, self._N_samples))
         if self._verbose:
-            utils.preview_plot([[self._ws_all, 'x', 0.2], [ws_thin, 'o', 0.3]])
+            utils.preview_plot([[self._ws_all, 'x', {}], [ws_sample, 'o', {}]])
 
         # %% Polyhedral expansion
         vca_indices = poly_contact.vertex_component_analysis(self._ws_all)
@@ -103,7 +102,7 @@ class ContactSimplifier(object):
             face_to_expand = None
             val = 1e-9
             for i in range(A.shape[0]):
-                residues = ws_thin.dot(A[i]) - b[i]
+                residues = ws_sample.dot(A[i]) - b[i]
                 face_val = np.sum(residues[np.where(residues > 0)])
                 if face_val > val:
                     face_to_expand = i
@@ -122,21 +121,8 @@ class ContactSimplifier(object):
         hull = poly_contact.ConvexHull(vertices)
 
         if self._verbose:
-            fig, axs = plt.subplots(2, 2)
-            to_plot = (
-                (0, 1, axs[0, 0]),
-                (0, 2, axs[0, 1]),
-                (3, 4, axs[1, 0]),
-                (4, 5, axs[1, 1]))
-
-            for i, j, ax in to_plot:
-                ax.scatter(self._ws_all[:, i], self._ws_all[:, j], c='C0', alpha=0.5, s=10)
-                ax.scatter(ws_thin[:, i], ws_thin[:, j], marker='x', c='C1', zorder=10, s=50)
-                ax.plot(vertices[:, i], vertices[:, j], c='C2')
-            timer = fig.canvas.new_timer(interval=3000)  # creating a timer object and setting an interval of 3000 milliseconds
-            timer.start()
-            timer.add_callback(lambda : plt.close())
-            plt.show()
+            utils.preview_plot([[self._ws_all, "x", {"markersize": 2}],
+                                [vertices, "--o", {"linewidth": 0.5}]])
 
         new_contact = self._contact.clone()
         new_contact.F_local = A

@@ -17,7 +17,6 @@ def setup_logging(level="INFO"):
                         datefmt="%H:%M:%S", milliseconds=True)
 
 
-
 def preview_plot(args, dur=3):
     """Preview data tuples given in args.
 
@@ -37,14 +36,13 @@ def preview_plot(args, dur=3):
     axs[1, 0].set_title('f_x vs f_z')
     axs[1, 1].set_title('f_y vs f_z')
     axs[1, 2].set_title('f_x vs f_y')
-    for ws_all, marker, size in args:
-        axs[0, 0].scatter(ws_all[:, 0], ws_all[:, 2], marker=marker, s=size)
-        axs[0, 1].scatter(ws_all[:, 1], ws_all[:, 2], marker=marker, s=size)
-        axs[0, 2].scatter(ws_all[:, 0], ws_all[:, 1], marker=marker, s=size)
-
-        axs[1, 0].scatter(ws_all[:, 3], ws_all[:, 5], marker=marker, s=size)
-        axs[1, 1].scatter(ws_all[:, 4], ws_all[:, 5], marker=marker, s=size)
-        axs[1, 2].scatter(ws_all[:, 3], ws_all[:, 4], marker=marker, s=size)
+    for ws_all, fmt, params in args:
+        axs[0, 0].plot(ws_all[:, 0], ws_all[:, 2], **params)
+        axs[0, 1].plot(ws_all[:, 1], ws_all[:, 2], **params)
+        axs[0, 2].plot(ws_all[:, 0], ws_all[:, 1], **params)
+        axs[1, 0].plot(ws_all[:, 3], ws_all[:, 5], **params)
+        axs[1, 1].plot(ws_all[:, 4], ws_all[:, 5], **params)
+        axs[1, 2].plot(ws_all[:, 3], ws_all[:, 4], **params)
 
     # Setup close figure callback
     logger.debug("Showing figure, closing in {:.3f} seconds".format(dur))

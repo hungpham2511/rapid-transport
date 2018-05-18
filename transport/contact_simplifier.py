@@ -51,6 +51,9 @@ class ContactSimplifier(object):
             ws_ = utils.load_data_ati_log(file_dir)
             ws_list.append(ws_)
         ws_all = np.vstack(ws_list)
+        logger.info("Scaling raw wrench data with factor = 0.9")
+        w_mean = np.mean(ws_all, axis=0)
+        ws_all = w_mean + (ws_all - w_mean) * 0.98
         self._ws_all = ws_all
         logger.info("Finish loading data points.")
         if self._verbose:

@@ -119,8 +119,15 @@ def main():
             # Joint trajectory
             t_samples = np.arange(0, joint_traj.get_duration(), algorithm_profile['sampling_period'])
             q_samples = joint_traj.eval(t_samples)
-            plt.plot(t_samples, q_samples)
-            plt.title("Joint position (t)")
+            qd_samples = joint_traj.evald(t_samples)
+            qdd_samples = joint_traj.evaldd(t_samples)
+            fig, axs = plt.subplots(3, 1, sharex=True)
+            axs[0].plot(t_samples, q_samples)
+            axs[0].set_title("Joint position (t)")
+            axs[1].plot(t_samples, qd_samples)
+            axs[1].set_title("Joint velocity (t)")
+            axs[2].plot(t_samples, qdd_samples)
+            axs[2].set_title("Joint acceleration (t)")
             plt.show()
         except Exception as e:
             pass

@@ -43,7 +43,7 @@ class Contact(RaveRobotFixedFrame):
     profile_id: str
         Id of the profile that this contact is loaded from.
     raw_data: list
-        List of raw data file names.
+        A list of file names, each contains a raw data file obtained from the FT sensor.
 
     """
     def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile_id="", raw_data=[]):

@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class ContactSimplifier(object):
-    """A class implementing Guided Polyhedral Expansion algorithm for
-    simplifying contacts.
+    """An implementatio of Guided Polyhedron Expansion algorithm for
+    simplifying contact stabilitty constraint.
 
     The input contact must be raw.
 
@@ -33,8 +33,9 @@ class ContactSimplifier(object):
     N_vertices: int, optional
         Number of maximum vertices.
     verbose: bool, optional
+
     """
-    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False):
+    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False, scale=0.98):
         self._N_samples = N_samples
         self._N_vertices = N_vertices
         self._contact = contact
@@ -45,17 +46,18 @@ class ContactSimplifier(object):
         assert len(contact.get_raw_data()) > 0, "There is no raw data to work with."
         db = Database()
         ws_list = []
-        logger.info("Start loading data points.")
+        logger.info("Loading raw data points.")
         for file_name in self._contact.get_raw_data():
             file_dir = os.path.join(db.get_contact_data_dir(), file_name)
             ws_ = utils.load_data_ati_log(file_dir)
             ws_list.append(ws_)
+            logger.info("file: {:} [Done]".format(file_name))
         ws_all = np.vstack(ws_list)
-        logger.info("Scaling raw wrench data with factor = 0.9")
+        logger.info("Scaling raw wrench data with factor = {:f}".format(scale))
         w_mean = np.mean(ws_all, axis=0)
-        ws_all = w_mean + (ws_all - w_mean) * 0.98
+        ws_all = w_mean + (ws_all - w_mean) * scale
         self._ws_all = ws_all
-        logger.info("Finish loading data points.")
+        logger.info("Loading finishes.")
         if self._verbose:
             utils.preview_plot([[ws_all, 'x', {}]])
         hull_full = ConvexHull(ws_all)
@@ -71,9 +73,10 @@ class ContactSimplifier(object):
         new_contact: Contact
         """
         # Sample points
-        logger.info("Start sampling wrenches for guidance.")
+        logger.info("Start sampling {:d} wrenches for guidance.".format(self._N_samples))
         ws_sample = []
         trial = 0
+        perc = -1e-9
         while len(ws_sample) < self._N_samples:
             trial += 1
             qdd_sam, qd_sam = utils.sample_uniform(2, 0.5, 6)
@@ -82,6 +85,9 @@ class ContactSimplifier(object):
             w_sam = self._solid_object.compute_inverse_dyn(q_sam, qd_sam, qdd_sam, T_world_contact)
             if np.all(self._contact.F_local.dot(w_sam) - self._contact.g_local <= 0):
                 ws_sample.append(w_sam)
+            if float(len(ws_sample)) / self._N_samples >= perc:
+                logger.info("Generated {:d} / {:d} samples in {:d} trials".format(len(ws_sample), self._N_samples, trial))
+                perc += 0.1
         ws_sample = np.array(ws_sample)
         logger.info("Finish sampling ({:d} trials / {:d} samples)".format(trial, self._N_samples))
         if self._verbose:

@@ -39,7 +39,7 @@ def test_simplify_contact_main(envcage, monkeypatch):
     "Test the simplify wrench script."
     monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
     res = simplify_contact.main(env=envcage, contact_id="suctioncup_kindlebox2_fortesting",
-                                object_id="kindlebox_light", attach="denso_suction_cup",
+                                object_id="kindlebox_light", attach_name="denso_suction_cup",
                                 T_link_object="[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 3.5e-3], [0, 0, 0, 1]]",
                                 robot_id="suctioncup1",
                                 verbose=True,

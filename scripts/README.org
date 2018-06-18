@@ -1,0 +1,40 @@
+This package implements functionalities for time-optimal path
+parameterization for object-transportation.
+
+To simplify a contact, then parametrize a trajectory, run the
+following script:
+#+BEGIN_SRC sh
+  transport.paper simplify-contact -c bigskirt_squarewood2\
+		  -o squarewood2 -a denso_suction_cup2\
+		  -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"\
+		  -r suctioncup1 -v
+
+  python parametrize_trajectory.py -c bigskirt_squarewood2_a2e54d1ae4\
+	 -o squarewood2 -t suctioncup_traj5a\
+	 -T "[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"\
+	 -r suctioncup1 -l topp_fast_2  -v
+#+END_SRC
+
+To run a trajectory
+#+BEGIN_SRC sh
+  python run_trajectory.py -t suctioncup_traj5a_14ca6c4b6c
+#+END_SRC
+
+
+* Note on testing
+
+  need to activate environment ros, and run gazebo virtual environment for testing
+
+  #+BEGIN_SRC sh
+    # term 1
+    workon ros
+    roslaunch ftsensorless gazebo_interface.launch robot_urdf:=denso_robotiq_85_gripper_pin  
+    # term 2
+    workon ros
+    roslaunch ftsensorless controllers.launch load_position_joint_controller:=true
+
+    # then, in term 3, test by running
+    pytest -v # or -x to 
+  #+END_SRC
+  
+

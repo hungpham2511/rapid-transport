@@ -13,7 +13,8 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def main(env=None, contact_id=None, object_id=None, attach=None, T_link_object=None, robot_id=None, verbose=False, N_samples=200, N_vertices=50):
+def main(env=None, contact_id=None, object_id=None, attach_name=None, T_link_object=None, robot_id=None, verbose=False, N_samples=200, N_vertices=50):
+    "Program to simplify contact profile."
     if verbose:
         utils.setup_logging("DEBUG")
     else:
@@ -36,11 +37,10 @@ def main(env=None, contact_id=None, object_id=None, attach=None, T_link_object=N
     solid_object = SolidObject.init_from_dict(robot, {
         "name": "object1",
         "object_profile": object_id,
-        "object_attach_to": attach,
+        "object_attach_to": attach_name,
         "T_link_object": np.array(yaml.load(T_link_object))
     })
-    simp = ContactSimplifier(robot, contact, solid_object, N_samples=N_samples,
-                             N_vertices=N_vertices, verbose=verbose)
+    simp = ContactSimplifier(robot, contact, solid_object, N_samples=N_samples, N_vertices=N_vertices, verbose=verbose)
     cs_new, hull_simplified = simp.simplify()
     ###########################################################################
     #                         Save new contact to database                    #

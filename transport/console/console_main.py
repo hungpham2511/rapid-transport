@@ -25,12 +25,12 @@ def main():
     #                        Simplify contact subparser demo                  #
     ###########################################################################
     parser_sim = subparsers.add_parser('simplify-contact', description="A program for simplifying and converting contact configurations. "
-                                                "Contact should contain raw_data field.")
+                                                                       "Contact should contain raw_data field.")
     parser_sim.set_defaults(which='simplify-contact')
-    parser_sim.add_argument('-c', '--contact', help='Contact to be simplified', required=True)
-    parser_sim.add_argument('-o', '--object', help='Object specification, use for dynamic exploration (strategy10).', required=False)
+    parser_sim.add_argument('-c', '--contact', help='Profile id of the contact to be simplified', required=True)
+    parser_sim.add_argument('-o', '--object', help='Profile id of the object specification, used for dynamic exploration.', required=False)
     parser_sim.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")
-    parser_sim.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
+    parser_sim.add_argument('-T', '--transform', help='Transformation T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
     parser_sim.add_argument('-r', '--robot', help='Robot specification, use for dynamic exploration (strategy10).', required=False, default="suctioncup1")
     parser_sim.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
 
@@ -45,7 +45,7 @@ def main():
         simplify_contact.main(
             contact_id=args.contact,
             object_id=args.object,
-            attach=args.attach,
+            attach_name=args.attach,
             T_link_object=args.transform,
             robot_id=args.robot,
             verbose=args.verbose

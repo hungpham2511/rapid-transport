@@ -141,6 +141,10 @@ suctioncup_traj5a_0df1384bd3: {attached_to_robot: denso_ft_sensor_suction.robot.
   reparam_object: kindlebox_light, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
   reparam_transform: '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0,
     1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_0df1384bd3.npz}
+suctioncup_traj5a_14ca6c4b6c: {id: suctioncup_traj5a_14ca6c4b6c, reparam_contact: bigskirt_squarewood2_a2e54d1ae4,
+  reparam_object: squarewood2, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
+  reparam_transform: '[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0,
+    0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_14ca6c4b6c.npz}
 suctioncup_traj5a_1f5924366b: {id: suctioncup_traj5a_1f5924366b, reparam_attach: denso_suction_cup2,
   reparam_contact: bigskirt_squarewood_145df2bcae, reparam_object: squarewood2, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
@@ -149,6 +153,10 @@ suctioncup_traj5a_2765258cb0: {id: suctioncup_traj5a_2765258cb0, reparam_attach:
   reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0], [0, 1,
     0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_2765258cb0.npz}
+suctioncup_traj5a_4c738f2901: {id: suctioncup_traj5a_4c738f2901, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_squarewood2_a2e54d1ae4, reparam_object: bluenb, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
+    -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_4c738f2901.npz}
 suctioncup_traj5a_4e0101cd89: {id: suctioncup_traj5a_4e0101cd89, reparam_attach: denso_suction_cup2,
   reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 30e-3], [0,
@@ -178,6 +186,14 @@ suctioncup_traj5a_edfca90feb: {id: suctioncup_traj5a_edfca90feb, reparam_attach:
   reparam_contact: bigskirt_squarewood_177f83d2fb, reparam_object: squarewood2, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
     -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_edfca90feb.npz}
+suctioncup_traj5a_feae61b9ce: {id: suctioncup_traj5a_feae61b9ce, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_squarewood2_a2e54d1ae4, reparam_object: squarewood2, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
+    -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_feae61b9ce.npz}
+suctioncup_traj5a_fec10b325e: {id: suctioncup_traj5a_fec10b325e, reparam_attach: denso_suction_cup2,
+  reparam_contact: bigskirt_squarewood2_a2e54d1ae4, reparam_object: bluenb, reparam_robot: suctioncup1,
+  reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,
+    -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_fec10b325e.npz}
 traj1:
   attached_to_robot: denso_ft_sensor_gripper.robot.xml
   description: Simple experiment I did sometime ago.

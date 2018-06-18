@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import hashlib
-import argparse, yaml, os
+import argparse, yaml, os, random
 import openravepy as orpy
 from datetime import datetime
 
@@ -16,17 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class ContactSimplifier(object):
-    """An implementatio of Guided Polyhedron Expansion algorithm for
+    """An implementation of Guided Polyhedron Expansion algorithm for
     simplifying contact stabilitty constraint.
-
-    The input contact must be raw.
 
     Parameters
     ----------
     robot: openravepy.Robot
     contact: Contact
-        An input contact object, which is raw. This mean it has to
-        have a non-empty `raw_data` field.
+        An input contact object which  has to have a non-empty `raw_data` field.
     solid_object: SolidObject
     N_samples: int, optional
         Number of samples to generate from the object dynamics.
@@ -72,11 +69,10 @@ class ContactSimplifier(object):
         -------
         new_contact: Contact
         """
-        # Sample points
         logger.info("Start sampling {:d} wrenches for guidance.".format(self._N_samples))
-        ws_sample = []
-        trial = 0
-        perc = -1e-9
+        ws_sample = []  # guided samples
+        trial = 0  # nb of random trial 
+        perc = -1e-9  # current generation progress
         while len(ws_sample) < self._N_samples:
             trial += 1
             qdd_sam, qd_sam = utils.sample_uniform(2, 0.5, 6)
@@ -94,28 +90,32 @@ class ContactSimplifier(object):
             utils.preview_plot([[self._ws_all, 'x', {}], [ws_sample, 'o', {}]])
 
         # %% Polyhedral expansion
-        vca_indices = poly_contact.vertex_component_analysis(self._ws_all)
-        logger.debug("Generate initial vertices with vca!")
-        vertices = self._ws_all[vca_indices].tolist()
-        vertices_index = list(vca_indices)
-        N_vertices = -1
+        # vca_indices = poly_contact.vertex_component_analysis(self._ws_all)
+        # logger.debug("Generate initial vertices with vca!")
+        # simp_vertices = self._ws_all[vca_indices].tolist()
+
+        logger.info("Choose 8 points in the guided wrenches as the initial guess.")
+        simp_vertices = random.sample(ws_sample, 8)
+        hull = poly_contact.ConvexHull(simp_vertices)
+        N_vertices = hull.vertices.shape[0]
         while N_vertices < self._N_vertices:
             logger.debug("[Projection] N_vertices={:d}".format(N_vertices))
+            logger.debug("[Projection] total number of point {:d}".format(len(simp_vertices)))
             logger.debug("[Projection] Generate new convex hull")
-            hull = poly_contact.ConvexHull(vertices)
-            N_vertices = hull.vertices.shape[0]
-
             logger.debug("[Projection] Select a face to expand")
             A, b = hull.get_halfspaces()
+            N_faces = len(b)
             # Select face to expand
             face_to_expand = None
-            val = 1e-9
-            for i in range(A.shape[0]):
+            max_residue = 1e-9
+            for i in range(N_faces):
                 residues = ws_sample.dot(A[i]) - b[i]
-                face_val = np.sum(residues[np.where(residues > 0)])
-                if face_val > val:
+                # An infinitesimal, 1e-8, ensures that the same
+                # samples do not get selected twice.
+                face_residue = np.sum(residues[np.where(residues > 1e-8)])
+                if face_residue > max_residue:
                     face_to_expand = i
-                    val = face_val
+                    max_residue = face_residue
 
             if face_to_expand is None:
                 # This mean all red vertices have been found
@@ -124,14 +124,14 @@ class ContactSimplifier(object):
             else:
                 opt_vertex_index = np.argmax(self._ws_all.dot(A[face_to_expand]))
 
-            vertices.append(self._ws_all[opt_vertex_index])
-            vertices_index.append(opt_vertex_index)
-        vertices = np.array(vertices)
-        hull = poly_contact.ConvexHull(vertices)
+            simp_vertices.append(self._ws_all[opt_vertex_index])
+            hull = poly_contact.ConvexHull(simp_vertices)
+            N_vertices = hull.vertices.shape[0]
+        simp_vertices = np.array(simp_vertices)
 
         if self._verbose:
             utils.preview_plot([[self._ws_all, "x", {"markersize": 2}],
-                                [vertices, "--o", {"linewidth": 0.5}]])
+                                [simp_vertices, "--o", {"linewidth": 0.5}]])
 
         new_contact = self._contact.clone()
         new_contact.F_local = A

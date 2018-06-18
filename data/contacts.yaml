@@ -49,33 +49,31 @@ bigskirt_squarewood:
 bigskirt_squarewood2:
   attached_to_manipulator: denso_ft_sensor
   description: Contact between the big suction cup with purple skirt and the squarewood.
-    New one.
+    New one. Skirt has cuts to avoid secondary sealing effect.
   id: bigskirt_squarewood2
   orientation:
-  - [1, 0, 0]
-  - [0, 1, 0]
-  - [0, 0, 1]
+  - &id001 [1, 0, 0]
+  - &id002 [0, 1, 0]
+  - &id003 [0, 0, 1]
   position: [0, 0, 0]
   raw_data: [bigskirt_squarewood2]
-bigskirt_squarewood2_145df2bcae:
-  N_faces: 2269
-  N_vertices: 51
-  arg_N_samples: 200
-  arg_N_vertices: 50
+bigskirt_squarewood2_a2e54d1ae4:
+  N_faces: 2132
+  N_vertices: 50
   attached_to_manipulator: denso_ft_sensor
-  constraint_coeffs_file: bigskirt_squarewood2_145df2bcae.npz
+  constraint_coeffs_file: bigskirt_squarewood2_a2e54d1ae4.npz
   description: Contact between the big suction cup with purple skirt and the squarewood.
-    New one.
+    New one. Skirt has cuts to avoid secondary sealing effect.
   generated_from: bigskirt_squarewood2
-  generated_on: '2018-05-17 19:07:39.188463'
-  id: bigskirt_squarewood2_145df2bcae
+  generated_on: '2018-06-18 14:50:54.960725'
+  id: bigskirt_squarewood2_a2e54d1ae4
   orientation:
-  - [1, 0, 0]
-  - [0, 1, 0]
-  - [0, 0, 1]
+  - *id001
+  - *id002
+  - *id003
   position: [0, 0, 0]
   strategy: strategy10
-  volume: 70.245406
+  volume: 62.775954
 bigskirt_squarewood_145df2bcae:
   N_faces: 2326
   N_vertices: 51
@@ -390,6 +388,11 @@ suctioncup_kindlebox2_fortesting:
   position: [0, 0, 0]
   raw_data: [suctioncup_kindlebox3]
   volume: 0.13294794
+suctioncup_kindlebox2_fortesting_9dd32813ed: {N_faces: 1504, N_vertices: 40, attached_to_manipulator: denso_suction_cup2,
+  constraint_coeffs_file: suctioncup_kindlebox2_fortesting_9dd32813ed.npz, description: Contact
+    between the suction cup and the kindle box. Very light interactions are recorded.,
+  generated_from: suctioncup_kindlebox2_fortesting, generated_on: '2018-05-18 17:46:36.905711',
+  id: suctioncup_kindlebox2_fortesting_9dd32813ed, strategy: strategy10, volume: 0.00064130272}
 suctioncup_kindlebox_467795874a:
   N_faces: 2282
   N_vertices: 51

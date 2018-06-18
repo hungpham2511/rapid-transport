@@ -1,21 +1,22 @@
-import toppra, toppra_app, hashlib, yaml
+import toppra, transport, hashlib, yaml
 import toppra.algorithm
 import numpy as np
 import argparse, os, time
 import openravepy as orpy
 import matplotlib.pyplot as plt
+import cvxpy as cvx
 
 def main():
     parse = argparse.ArgumentParser(description="A program for parametrizing trajectory. Output trajectory"
-                                                "id is generated from the ids of contact, object, robot and"
-                                                "algorithm respectively using a hash function. Hence, if two"
-                                                "trajectories are parametrized using the same setup, their ids"
-                                                "will be similar.")
-    parse.add_argument('-c', '--contact', help='Id of the contact to be simplified', required=True)
-    parse.add_argument('-o', '--object', help='Id of the object to transport', required=True)
-    parse.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")
-    parse.add_argument('-T', '--transform', help='T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
-    parse.add_argument('-r', '--robot', help='Robot specification. Contain path to openrave robot model, velocity and acceleration limits.', required=False, default="suctioncup1")
+                                    "id is generated from the ids of contact, object, robot and"
+                                    "algorithm respectively using a hash function. Hence, if two"
+                                    "trajectories are parametrized using the same setup, their ids"
+                                    "will be similar."
+                                    "")
+    parse.add_argument('-c', '--contact', help='Profile id of the contact model', required=True)
+    parse.add_argument('-o', '--object', help='Profile id of the object to transport', required=True)
+    parse.add_argument('-T', '--transform', help='Transform from {link} to {object}: T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
+    parse.add_argument('-r', '--robot', help='Robot specification. Contain file path to openrave robot model, also its velocity and acceleration limits.', required=False, default="suctioncup1")
     parse.add_argument('-l', '--algorithm', help='Algorithm specification.', default="topp_fast")
     parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
@@ -25,37 +26,43 @@ def main():
         import coloredlogs
         coloredlogs.install(level='DEBUG')
         np.set_printoptions(3)
+    else:
+        import coloredlogs
+        coloredlogs.install(level='INFO')
 
-    db = toppra_app.database.Database()
-
+    # Finish parsing, load different profiles
+    db = transport.database.Database()
     contact_profile = db.retrieve_profile(args['contact'], "contact")
     object_profile = db.retrieve_profile(args['object'], "object")
     traj_profile = db.retrieve_profile(args['trajectory'], "trajectory")
     algorithm_profile = db.retrieve_profile(args['algorithm'], "algorithm")
     robot_profile = db.retrieve_profile(args['robot'], "robot")
+    N = algorithm_profile['N']
 
+    # Setup necessary modules and objects
     env = orpy.Environment()
-    env.Load(toppra_app.utils.expand_and_join(db.get_model_dir(), robot_profile['robot_model']))
+    env.Load(transport.utils.expand_and_join(db.get_model_dir(), robot_profile['robot_model']))
     robot = env.GetRobots()[0]
     manip = robot.GetManipulator(robot_profile['manipulator'])
     arm_indices = manip.GetArmIndices()
 
     T_object = np.array(yaml.load(args['transform']), dtype=float)
-    solid_object = toppra_app.SolidObject(robot, object_profile['attached_to_manipulator'],
-                                          T_object,
-                                          object_profile['mass'],
-                                          np.array(object_profile['local_inertia'], dtype=float),
-                                          dofindices=arm_indices)
-    contact = toppra_app.Contact.init_from_profile_id(robot, args['contact'])
+    solid_object = transport.SolidObject(robot, object_profile['attached_to_manipulator'],
+                                         T_object,
+                                         object_profile['mass'],
+                                         np.array(object_profile['local_inertia'], dtype=float),
+                                         dofindices=arm_indices)
+    contact = transport.Contact.init_from_profile_id(robot, args['contact'])
     assert contact.F_local is not None, "A contact needs to be pre-processed before it can be used. Run simplify_wrench.py on this contact."
 
-    pc_object_trans = toppra_app.create_object_transporation_constraint(contact, solid_object)
+    # Setup constraints: contact(object tranport), velocity and acceleration
+    pc_object_trans = transport.create_object_transporation_constraint(contact, solid_object)
     if algorithm_profile['interpolate_dynamics']:
         pc_object_trans.set_discretization_type(1)
     else:
         pc_object_trans.set_discretization_type(0)
 
-    print "Assembling the constraints"
+    print pc_object_trans
     vlim_ = np.r_[robot_profile['velocity_limits']]
     alim_ = np.r_[robot_profile['acceleration_limits']]
     vlim = np.vstack((-vlim_, vlim_)).T
@@ -70,7 +77,7 @@ def main():
         pc_velocity.set_discretization_type(0)
         pc_accel.set_discretization_type(0)
 
-    # Get path
+    # retrieve and define geometric path
     if "waypoints_npz" in traj_profile:
         file_ = np.load(os.path.join(db.get_trajectory_data_dir(), traj_profile['waypoints_npz']))
         ts_waypoints = file_['t_waypoints']
@@ -80,14 +87,67 @@ def main():
         waypoints = traj_profile['waypoints']
     else:
         raise IOError, "Waypoints not found in trajectory {:}".format(traj_profile['id'])
+
+    # setup toppra instance
     path = toppra.SplineInterpolator(ts_waypoints, waypoints)
-    ss = np.linspace(0, path.get_duration(), algorithm_profile['N'] + 1)
+    ss = np.linspace(0, path.get_duration(), N + 1)
 
     instance = toppra.algorithm.TOPPRA([pc_accel, pc_velocity, pc_object_trans], path, ss,
                                        solver_wrapper=algorithm_profile['solver_wrapper'])
+
+    # solve first stage: toppra
     t0 = time.time()
-    joint_traj, aux_traj, out = instance.compute_trajectory(0, 0, return_profile=True)
+    _, sd_vec, _ = instance.compute_parameterization(0, 0)
+    xs = sd_vec ** 2
     print "Trajectory computation takes {:f} seconds".format(time.time() - t0)
+
+    # solve second stage: post-processing
+    ds = 1.0 / N
+    sddd_bnd = 100
+    # matrix for computing jerk: 
+    # Jmat = [-2  1 .....  ]
+    #        [ 1 -2  1 ... ]
+    #        [ 0  1 -2 1 ..]
+    Jmat = np.zeros((N+1, N+1))   
+    for i in range(N+1):
+        Jmat[i, i] = -2
+    for i in range(N):
+        Jmat[i + 1, i] = 1
+        Jmat[i, i + 1] = 1
+    Jmat = Jmat / ds ** 2
+    
+    xs_var = cvx.Variable(N + 1)
+    x_pprime_var = Jmat * xs_var
+    s_dddot_var = cvx.mul_elemwise(np.sqrt(xs) + 1e-5, x_pprime_var)
+    residue = cvx.Variable()
+    
+    constraints = [xs_var >= 0,
+                   xs_var[0] == 0,
+                   xs_var[-1] == 0,
+                   xs_var <= xs,
+                   0 <= residue,
+                   s_dddot_var - sddd_bnd <= residue,
+                   -sddd_bnd - s_dddot_var <= residue]
+
+    obj = cvx.Minimize(1.0 / N * cvx.norm(xs_var - xs, 1) + 1.0 * residue)
+    prob = cvx.Problem(obj, constraints)
+    status = prob.solve()
+
+    print "Problem status {:}".format(status)
+    print "residual value: {:f}".format(residue.value)
+    xs_new = np.array(xs_var.value).flatten()
+    xs_new[0] = 0
+    xs_new[-1] = 0
+
+    # Compute trajectory
+    ss = np.linspace(0, 1, N+1)
+    ts = [0]
+    for i in range(1, N+1):
+        sd_ = (np.sqrt(xs_new[i]) + np.sqrt(xs_new[i - 1])) / 2
+        ts.append(ts[-1] + (ss[i] - ss[i - 1]) / sd_)
+    q_grid = path.eval(ss)
+    joint_traj = toppra.SplineInterpolator(ts, q_grid)
+    
     try:
         print("Trajectory duration: {:f} seconds".format(joint_traj.get_duration()))
     except Exception as e:
@@ -100,9 +160,8 @@ def main():
         plt.plot(K[:, 0], c='red')
         plt.plot(K[:, 1], c='red')
         try:
-            sdd_grid, sd_grid, _ = out
-            xs = sd_grid ** 2
-            plt.plot(xs, c='blue')
+            plt.plot(xs, '--', c='green')
+            plt.plot(xs_new, c='blue')
         except Exception as e:
             print("Parametrization fails. Do not plot velocity profile.")
         plt.xlabel("i: Discrete step")
@@ -133,7 +192,7 @@ def main():
             pass
 
     identify_string = str(
-        args['contact'] + args['object'] + args['algorithm'] + args['robot'] + args['attach'] + args['transform']
+        args['contact'] + args['object'] + args['algorithm'] + args['robot'] + args['transform']
     )
     traj_param_id = args['trajectory'] + "_" + hashlib.md5(identify_string).hexdigest()[:10]
     cmd = raw_input("Save parametrized trajectory to database as {:} y/[N]?".format(traj_param_id))
@@ -150,7 +209,6 @@ def main():
             'reparametrized': True,
             'reparam_trajectory': args['trajectory'],
             'reparam_object': args['object'],
-            'reparam_attach': args['attach'],
             'reparam_transform': args['transform'],
             'reparam_contact': args['contact'],
             'reparam_robot': args['robot'],

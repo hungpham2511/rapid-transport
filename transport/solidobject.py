@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
-    """A class represents a the dynamics of a solid object.
+    """A class represents a solid object.
 
     The geometry of an object, such as its mesh, is only used for
-    collision checking. The transform of this mesh is given by
+    collision checking. The pose of the mesh is given by
     `T_object_model`.
 
     The frame {object} has an origin that coincides with the object

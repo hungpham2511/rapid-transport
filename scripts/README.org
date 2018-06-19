@@ -9,10 +9,11 @@ following script:
 		  -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"\
 		  -r suctioncup1 -v
 
-  python parametrize_trajectory.py -c bigskirt_squarewood2_a2e54d1ae4\
-	 -o squarewood2 -t suctioncup_traj5a\
+  python parametrize_trajectory.py -t suctioncup_traj5a\
+	 -c bigskirt_squarewood2_a2e54d1ae4\
+	 -o squarewood2 -a denso_suction_cup2\
 	 -T "[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"\
-	 -r suctioncup1 -l topp_fast_2  -v
+	 -r suctioncup1 -l topp_fast_2 -v
 #+END_SRC
 
 To run a trajectory
@@ -59,8 +60,9 @@ TO start the Denso hardware
 		    -r suctioncup1 -v
 
     python parametrize_trajectory.py -c bigcup_bluenb_1608823082\
-	   -o bluenb -t suctioncup_traj5a\
+	   -o bluenb -a denso_suction_cup2\
 	   -T "[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
+	   -t suctioncup_traj5a\
 	   -r suctioncup1 -l topp_fast_2  -v
 
     python run_trajectory.py -t suctioncup_traj5a_57c22f0413
@@ -74,5 +76,12 @@ TO start the Denso hardware
   the EXPERIMENT to finish.
 
   #+BEGIN_SRC sh
-  transport.paper pick-demo --scene "scenarios/exp1.scenario.yaml" -e
+  transport.paper pick-demo --scene "scenarios/exp1.scenario.yaml" -e 
   #+END_SRC
+* concepts
+
+  SolidObjects: three important frame {object}, {model} and {link}.
+
+
+  Contact: Fixed rigidly to a frame {manipulator} with pose defined by
+  (position, orientation).

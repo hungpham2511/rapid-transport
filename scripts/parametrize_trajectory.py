@@ -13,12 +13,13 @@ def main():
                                     "trajectories are parametrized using the same setup, their ids"
                                     "will be similar."
                                     "")
+    parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
     parse.add_argument('-c', '--contact', help='Profile id of the contact model', required=True)
     parse.add_argument('-o', '--object', help='Profile id of the object to transport', required=True)
+    parse.add_argument('-a', '--attach', help='Name of the link or manipulator that the object is attached to.', required=False, default="denso_suction_cup2")
     parse.add_argument('-T', '--transform', help='Transform from {link} to {object}: T_link_object', required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
     parse.add_argument('-r', '--robot', help='Robot specification. Contain file path to openrave robot model, also its velocity and acceleration limits.', required=False, default="suctioncup1")
     parse.add_argument('-l', '--algorithm', help='Algorithm specification.', default="topp_fast")
-    parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
     args = vars(parse.parse_args())
 
@@ -32,7 +33,6 @@ def main():
 
     # Finish parsing, load different profiles
     db = transport.database.Database()
-    contact_profile = db.retrieve_profile(args['contact'], "contact")
     object_profile = db.retrieve_profile(args['object'], "object")
     traj_profile = db.retrieve_profile(args['trajectory'], "trajectory")
     algorithm_profile = db.retrieve_profile(args['algorithm'], "algorithm")
@@ -47,13 +47,15 @@ def main():
     arm_indices = manip.GetArmIndices()
 
     T_object = np.array(yaml.load(args['transform']), dtype=float)
-    solid_object = transport.SolidObject(robot, object_profile['attached_to_manipulator'],
+    solid_object = transport.SolidObject(robot,
+                                         args['attach'],
                                          T_object,
                                          object_profile['mass'],
                                          np.array(object_profile['local_inertia'], dtype=float),
                                          dofindices=arm_indices)
     contact = transport.Contact.init_from_profile_id(robot, args['contact'])
-    assert contact.F_local is not None, "A contact needs to be pre-processed before it can be used. Run simplify_wrench.py on this contact."
+    assert contact.F_local is not None, ("A contact needs to be pre-processed before it can be used. "
+                                         "Run simplify_wrench.py on this contact.")
 
     # Setup constraints: contact(object tranport), velocity and acceleration
     pc_object_trans = transport.create_object_transporation_constraint(contact, solid_object)

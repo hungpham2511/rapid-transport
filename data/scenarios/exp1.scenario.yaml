@@ -8,7 +8,6 @@ objects:
     object_profile: bluenb
     object_attach_to: denso_suction_cup2
     contact_profile: bigcup_bluenb_1608823082
-    contact_attach_to: denso_ft_sensor
     T_link_object:
       - [1, 0, 0, 0]
       - [0, -1, 0, 0]
@@ -29,7 +28,6 @@ objects:
     object_profile: kindlebox_light
     object_attach_to: denso_suction_cup2
     contact_profile: bigcup_bluenb_1608823082
-    contact_attach_to: denso_ft_sensor
     T_link_object:
       - [1, 0, 0, 0e-3]
       - [0, -1, 0, 0]

@@ -100,7 +100,7 @@ class PickAndPlaceDemo(object):
         A factor to slowdown execution. A value of 0.5 means slowdown to half computed speed.
         A value of 1.0 means execute at computed speed.
     """
-    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=1.0 / 150, slowdown=0.5):
+    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=1.0 / 150, slowdown=1.0):
         assert load_path is not None, "A scenario must be supplied"
         self.verbose = verbose
         self.execute_hw = execute_hw

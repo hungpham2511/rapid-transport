@@ -3,13 +3,14 @@ robot:  denso
     
 # Define object to transport
 objects:
+
   - name: object3
     object_profile: westone
     object_attach_to: denso_suction_cup2
     contact_profile: bigcup_bluenb_1608823082
     T_link_object:
-      - [1, 0, 0, 0e-3]
-      - [0, -1, 0, 0]
+      - [0, -1, 0, 0e-3]
+      - [-1, 0, 0, 0]
       - [0, 0, -1, 28.5e-3]
       - [0, 0, 0, 1]
     T_start: 
@@ -18,49 +19,9 @@ objects:
       - [0, 0, 1, 0.124]
       - [0, 0, 0, 0]
     T_goal:
-      - [1, 0, 0, 0.5]
-      - [0, 1, 0, +0.3]
-      - [0, 0, 1, 0.12]
-      - [0, 0, 0, 0]
-
-  - name: object4
-    object_profile: carton_box
-    object_attach_to: denso_suction_cup2
-    contact_profile: bigcup_bluenb_1608823082
-    T_link_object:
-      - [1, 0, 0, 0e-3]
-      - [0, -1, 0, 0]
-      - [0, 0, -1, 28.5e-3]
-      - [0, 0, 0, 1]
-    T_start: 
-      - [0, -1, 0, 0.38]
-      - [1, 0, 0, -0.37]
-      - [0, 0, 1, 0.02]
-      - [0, 0, 0, 0]
-    T_goal:
-      - [1, 0, 0, 0.5]
-      - [0, 1, 0, +0.3]
-      - [0, 0, 1, 0.12]
-      - [0, 0, 0, 0]
-
-  - name: object2
-    object_profile: bluenb
-    object_attach_to: denso_suction_cup2
-    contact_profile: bigcup_bluenb_1608823082
-    T_link_object:
-      - [1, 0, 0, 0]
-      - [0, -1, 0, 0]
-      - [0, 0, -1, 12.5e-3]
-      - [0, 0, 0, 1]
-    T_start: 
-      - [0, -1, 0, 0.38]
-      - [1, 0, 0, -0.362]
-      - [0, 0, 1, 0.06]
-      - [0, 0, 0, 0]
-    T_goal:
-      - [1, 0, 0, 0.5]
-      - [0, 1, 0, +0.3]
-      - [0, 0, 1, 0.0]
+      - [0, -1, 0, 0.55]
+      - [1, 0, 0, +0.36]
+      - [0, 0, 1, 0.08]
       - [0, 0, 0, 0]
 
   - name: object1
@@ -68,8 +29,8 @@ objects:
     object_attach_to: denso_suction_cup2
     contact_profile: bigcup_bluenb_1608823082
     T_link_object:
-      - [1, 0, 0, 0e-3]
-      - [0, -1, 0, 0]
+      - [0, -1, 0, 0e-3]
+      - [-1, 0, 0, 0]
       - [0, 0, -1, 25.5e-3]
       - [0, 0, 0, 1]
     T_start: 
@@ -78,7 +39,47 @@ objects:
       - [0, 0, 1, 0.084]
       - [0, 0, 0, 0]
     T_goal:
-      - [1, 0, 0, 0.5]
-      - [0, 1, 0, +0.3]
+      - [-1, 0, 0, 0.35]
+      - [0, -1, 0, +0.4]
+      - [0, 0, 1, 0.08]
+      - [0, 0, 0, 0]
+
+  - name: object2
+    object_profile: bluenb
+    object_attach_to: denso_suction_cup2
+    contact_profile: bigcup_bluenb_1608823082
+    T_link_object:
+      - [0, -1, 0, 0]
+      - [-1, 0, 0, 0]
+      - [0, 0, -1, 12.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0, -1, 0, 0.38]
+      - [1, 0, 0, -0.362]
+      - [0, 0, 1, 0.06]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [-1, 0, 0, 0.36]
+      - [0, -1, 0, +0.3]
+      - [0, 0, 1, 0.08]
+      - [0, 0, 0, 0]
+
+  - name: object4
+    object_profile: carton_box
+    object_attach_to: denso_suction_cup2
+    contact_profile: bigcup_bluenb_1608823082
+    T_link_object:
+      - [0, -1, 0, 0e-3]
+      - [-1, 0, 0, 0]
+      - [0, 0, -1, 28.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0, -1, 0, 0.38]
+      - [1, 0, 0, -0.37]
       - [0, 0, 1, 0.02]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [0, -1, 0, 0.5]
+      - [1, 0, 0, +0.3]
+      - [0, 0, 1, 0.12]
       - [0, 0, 0, 0]

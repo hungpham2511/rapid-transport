@@ -68,8 +68,6 @@ TO start the Denso hardware
     python run_trajectory.py -t suctioncup_traj5a_57c22f0413
 
   #+END_SRC
-
-
   
 * full experiment
   
@@ -81,7 +79,12 @@ TO start the Denso hardware
 * concepts
 
   SolidObjects: three important frame {object}, {model} and {link}.
-
+  
+  Record of Objects in objects.yaml
+  - each entry corresponds to an object, which contains the object's
+    inertial properties: mass and moment of inertia.
+  - geometrical information of the object is also given, via
+    T_object_model and rave_model;
 
   Contact: Fixed rigidly to a frame {manipulator} with pose defined by
   (position, orientation).

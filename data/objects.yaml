@@ -27,6 +27,34 @@ squarewood2:
     - [0, -1, 0]
     - [0, 0, -1]
 
+carton_box:
+  description: The carton_box, padded with a wooden plate inside.
+  rave_model: objects/carton_box.xml
+  mass: 0.347
+  local_inertia:
+    - [ 9.8e-4, 0,        0     ]
+    - [ 0,        2.96e-3, 0     ]
+    - [ 0,        0,       3.77e-3]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0]
+    - [0, 0, 0, 1]
+
+westone:
+  description: The westone.
+  rave_model: objects/westone.xml
+  mass: 0.204
+  local_inertia:
+    - [ 2.38e-4, 0,        0     ]
+    - [ 0,        6.02e-4, 0     ]
+    - [ 0,        0,       7.56e-4]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0]
+    - [0, 0, 0, 1]
+
 optitrack_box:
   description: The carton box used to carry an optitrack camera.
   attached_to_manipulator: denso_suction_cup2

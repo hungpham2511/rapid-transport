@@ -1,4 +1,4 @@
-env: caged_denso_ft_sensor_suction.env.xml
+world_xml_dir: caged_denso_ft_sensor_suction.env.xml
 robot:  denso
     
 # Define object to transport

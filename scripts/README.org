@@ -4,8 +4,8 @@ parameterization for object-transportation.
 To simplify a contact, then parametrize a trajectory, run the
 following script:
 #+BEGIN_SRC sh
-  transport.paper simplify-contact -c bigskirt_squarewood2\
-		  -o squarewood2 -a denso_suction_cup2\
+  transport.paper simplify-contact -c bigcup_bluenb\
+		  -o bluenb -a denso_suction_cup2\
 		  -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"\
 		  -r suctioncup1 -v
 
@@ -18,6 +18,16 @@ following script:
 To run a trajectory
 #+BEGIN_SRC sh
   python run_trajectory.py -t suctioncup_traj5a_14ca6c4b6c
+#+END_SRC
+
+TO start the Denso hardware
+#+BEGIN_SRC sh
+  roslaunch ftsensorless hardware_interface.launch robot_ip:=192.168.0.11\
+	    ftsensor_ip:=192.168.0.12 gripper_ip:=192.168.0.14\
+	    has_gripper:=false
+
+ roslaunch ftsensorless controllers.launch load_position_joint_controller:=true
+
 #+END_SRC
 
 
@@ -38,3 +48,31 @@ To run a trajectory
   #+END_SRC
   
 
+* bigcup w/out skirt with blue notebook experiment
+  contact: bigcup_bluenb
+  attached to bluenb
+
+  #+BEGIN_SRC sh
+    transport.paper simplify-contact -c bigcup_bluenb\
+		    -o bluenb -a denso_suction_cup2\
+		    -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
+		    -r suctioncup1 -v
+
+    python parametrize_trajectory.py -c bigcup_bluenb_1608823082\
+	   -o bluenb -t suctioncup_traj5a\
+	   -T "[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
+	   -r suctioncup1 -l topp_fast_2  -v
+
+    python run_trajectory.py -t suctioncup_traj5a_57c22f0413
+
+  #+END_SRC
+
+
+  
+* full experiment
+  
+  the EXPERIMENT to finish.
+
+  #+BEGIN_SRC sh
+  transport.paper pick-demo --scene "scenarios/exp1.scenario.yaml" -e
+  #+END_SRC

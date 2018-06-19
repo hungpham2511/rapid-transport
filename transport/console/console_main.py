@@ -12,7 +12,7 @@ def main():
     #                        Pick-and-place subparser demo                    #
     ###########################################################################
     parser_pick = subparsers.add_parser('pick-demo', description='')
-    parser_pick.set_defaults(which='pick-demo')
+    parser_pick.set_defaults(which='pick-demo')  # use this to select sub-parser
     parser_pick.add_argument('-s', "--scene", help="Path to scenario. "
                                                    "Example: scenarios/test0.scenario.yaml",
                              default="scenarios/test0.scenario.yaml")
@@ -26,7 +26,7 @@ def main():
     ###########################################################################
     parser_sim = subparsers.add_parser('simplify-contact', description="A program for simplifying and converting contact configurations. "
                                                                        "Contact should contain raw_data field.")
-    parser_sim.set_defaults(which='simplify-contact')
+    parser_sim.set_defaults(which='simplify-contact')  # use this to select sub-parser
     parser_sim.add_argument('-c', '--contact', help='Profile id of the contact to be simplified', required=True)
     parser_sim.add_argument('-o', '--object', help='Profile id of the object specification, used for dynamic exploration.', required=False)
     parser_sim.add_argument('-a', '--attach', help='Name of the link or mnaipulator that the object is attached to.', required=False, default="denso_suction_cup")

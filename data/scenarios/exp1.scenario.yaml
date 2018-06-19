@@ -1,4 +1,4 @@
-env: pick-exp1.env.xml
+world_xml_dir: pick-exp1.env.xml
 robot:  denso
     
 # Define object to transport
@@ -7,7 +7,7 @@ objects:
   - name: object2
     object_profile: bluenb
     object_attach_to: denso_suction_cup2
-    contact_profile: bigskirt_bluenb_a53d963616
+    contact_profile: bigcup_bluenb_1608823082
     contact_attach_to: denso_ft_sensor
     T_link_object:
       - [1, 0, 0, 0]
@@ -27,8 +27,8 @@ objects:
 
   - name: object1
     object_profile: kindlebox_light
-    object_attach_to: denso_suction_cup
-    contact_profile: suctioncup_skirt_kindlebox_467795874a
+    object_attach_to: denso_suction_cup2
+    contact_profile: bigcup_bluenb_1608823082
     contact_attach_to: denso_ft_sensor
     T_link_object:
       - [1, 0, 0, 0e-3]

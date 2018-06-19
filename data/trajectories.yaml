@@ -161,6 +161,10 @@ suctioncup_traj5a_4e0101cd89: {id: suctioncup_traj5a_4e0101cd89, reparam_attach:
   reparam_contact: bigskirt_bluenb_a53d963616, reparam_object: bluenb, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 30e-3], [0,
     -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_4e0101cd89.npz}
+suctioncup_traj5a_57c22f0413: {id: suctioncup_traj5a_57c22f0413, reparam_contact: bigcup_bluenb_1608823082,
+  reparam_object: bluenb, reparam_robot: suctioncup1, reparam_trajectory: suctioncup_traj5a,
+  reparam_transform: '[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0,
+    0, 1]]', reparametrized: true, waypoints_npz: suctioncup_traj5a_57c22f0413.npz}
 suctioncup_traj5a_9e7c94e36e: {id: suctioncup_traj5a_9e7c94e36e, reparam_attach: denso_suction_cup2,
   reparam_contact: bigskirt_squarewood_177f83d2fb, reparam_object: squarewood, reparam_robot: suctioncup1,
   reparam_trajectory: suctioncup_traj5a, reparam_transform: '[[1, 0, 0, 0e-3], [0,

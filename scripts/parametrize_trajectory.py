@@ -99,11 +99,12 @@ def main():
     t0 = time.time()
     _, sd_vec, _ = instance.compute_parameterization(0, 0)
     xs = sd_vec ** 2
-    print "Trajectory computation takes {:f} seconds".format(time.time() - t0)
+    print "solve TOPP with TOPP-RA takes {:f} seconds".format(time.time() - t0)
 
     # solve second stage: post-processing
+    t0 = time.time()
     ds = 1.0 / N
-    sddd_bnd = 100
+    sddd_bnd = 200
     # matrix for computing jerk: 
     # Jmat = [-2  1 .....  ]
     #        [ 1 -2  1 ... ]
@@ -115,7 +116,14 @@ def main():
         Jmat[i + 1, i] = 1
         Jmat[i, i + 1] = 1
     Jmat = Jmat / ds ** 2
-    
+     
+    # matrix for differentiation
+    Amat = np.zeros((N, N + 1))
+    for i in range(N):
+        Amat[i, i] = -1
+        Amat[i, i + 1] = 1
+    Amat = Amat / 2 / ds
+   
     xs_var = cvx.Variable(N + 1)
     x_pprime_var = Jmat * xs_var
     s_dddot_var = cvx.mul_elemwise(np.sqrt(xs) + 1e-5, x_pprime_var)
@@ -129,10 +137,13 @@ def main():
                    s_dddot_var - sddd_bnd <= residue,
                    -sddd_bnd - s_dddot_var <= residue]
 
-    obj = cvx.Minimize(1.0 / N * cvx.norm(xs_var - xs, 1) + 1.0 * residue)
+    obj = cvx.Minimize(1.0 / N * cvx.norm(xs_var - xs, 1)
+                       + 1.0 / N * cvx.norm(Amat.dot(xs) - Amat * xs_var, 1)
+                       + 0.0 * residue)
     prob = cvx.Problem(obj, constraints)
     status = prob.solve()
 
+    print "post-processing takes {:f} seconds".format(time.time() - t0)
     print "Problem status {:}".format(status)
     print "residual value: {:f}".format(residue.value)
     xs_new = np.array(xs_var.value).flatten()
@@ -140,14 +151,15 @@ def main():
     xs_new[-1] = 0
 
     # Compute trajectory
-    ss = np.linspace(0, 1, N+1)
+    ss = np.linspace(0, 1, N + 1)
     ts = [0]
-    for i in range(1, N+1):
+    for i in range(1, N + 1):
         sd_ = (np.sqrt(xs_new[i]) + np.sqrt(xs_new[i - 1])) / 2
         ts.append(ts[-1] + (ss[i] - ss[i - 1]) / sd_)
     q_grid = path.eval(ss)
+    # joint_traj = toppra.SplineInterpolator(ts, q_grid, bc_type='natural')
     joint_traj = toppra.SplineInterpolator(ts, q_grid)
-    
+
     try:
         print("Trajectory duration: {:f} seconds".format(joint_traj.get_duration()))
     except Exception as e:
@@ -157,11 +169,11 @@ def main():
     if args['verbose']:
         ymax = 3.5
         K = instance.compute_controllable_sets(0, 0)
-        plt.plot(K[:, 0], c='red')
+        plt.plot(K[:, 0], c='red', label="controllable sets")
         plt.plot(K[:, 1], c='red')
         try:
-            plt.plot(xs, '--', c='green')
-            plt.plot(xs_new, c='blue')
+            plt.plot(xs, '--', c='green', label="velocity profile (w/out pp)")
+            plt.plot(xs_new, c='blue', label="velocity profiel (with pp)")
         except Exception as e:
             print("Parametrization fails. Do not plot velocity profile.")
         plt.xlabel("i: Discrete step")
@@ -172,6 +184,7 @@ def main():
         ymin, _ = plt.ylim()
         plt.ylim(ymin, ymax + 0.5)
         plt.grid()
+        plt.legend()
         plt.show()
 
         try:
@@ -191,9 +204,7 @@ def main():
         except Exception as e:
             pass
 
-    identify_string = str(
-        args['contact'] + args['object'] + args['algorithm'] + args['robot'] + args['transform']
-    )
+    identify_string = str(args['contact'] + args['object'] + args['algorithm'] + args['robot'] + args['transform'])
     traj_param_id = args['trajectory'] + "_" + hashlib.md5(identify_string).hexdigest()[:10]
     cmd = raw_input("Save parametrized trajectory to database as {:} y/[N]?".format(traj_param_id))
     if cmd != 'y':

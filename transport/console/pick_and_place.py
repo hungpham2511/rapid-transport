@@ -73,12 +73,11 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
             if cmd == "i":
                 import ipdb; ipdb.set_trace()
             return None
-
-        # Plan trajectory to that point
-        traj0 = raveutils.planning.plan_to_joint_configuration(
-            robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
     for body in all_grabbed:
         robot.Grab(body)
+        # Plan trajectory to that point
+    traj0 = raveutils.planning.plan_to_joint_configuration(
+        robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
     return traj0
 
 
@@ -280,7 +279,8 @@ class PickAndPlaceDemo(object):
             self.check_continue()
             fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
-            self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
+            with self._env:
+                self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
             time.sleep(0.3)
 
@@ -313,7 +313,13 @@ class PickAndPlaceDemo(object):
             self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
             logger.info("Releasing the object. Robot stops for 0.5 secs")
             time.sleep(0.5)
-            
+
+            # remove objects from environment
+            T_cur = self.get_env().GetKinBody(obj_d['name']).GetTransform()
+            T_cur[2, 3] = 0.0
+            self.get_env().GetKinBody(obj_d['name']).SetTransform(T_cur)
+
+
         time.sleep(2)
         return not fail
 

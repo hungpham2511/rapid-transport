@@ -53,6 +53,7 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
     traj: openravepy.Trajectory
 
     """
+    # Release object to find final goal configuration without collision.
     all_grabbed = robot.GetGrabbed()
     robot.ReleaseAllGrabbed()
     with robot:
@@ -75,7 +76,7 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
             return None
     for body in all_grabbed:
         robot.Grab(body)
-        # Plan trajectory to that point
+    # Plan trajectory to that point
     traj0 = raveutils.planning.plan_to_joint_configuration(
         robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
     return traj0
@@ -196,6 +197,7 @@ class PickAndPlaceDemo(object):
                 with self._robot:
                     self._robot.SetActiveDOFValues(qstart_nocol)
                     self._env.UpdatePublishedBodies()
+                    logger.fatal("Jnt: {:}".format(qstart_nocol / np.pi * 180))
                     cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
                     if cmd == "i":
                         import ipdb; ipdb.set_trace()
@@ -286,8 +288,10 @@ class PickAndPlaceDemo(object):
 
             # Move back to a pose that is on top of the target transform
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
+            traj0c_retimed = toppra.retime_active_joints_kinematics(
+                traj0c, self.get_robot(), amult=0.2, vmult=0.2)
             self.check_continue()
-            fail = not self.execute_trajectory(traj0c)
+            fail = not self.execute_trajectory(traj0c_retimed)
             self.get_robot().WaitForController(0)
 
             # Plan a trajectory to transport the object to reach the goal pose
@@ -303,8 +307,9 @@ class PickAndPlaceDemo(object):
             logger.info("Retime using toppra.")
             contact = self.get_object(obj_d['name']).get_contact()
             contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_d['name']))
-            traj1_retimed = toppra.retime_active_joints_kinematics(
-                traj1_transport, self.get_robot(), additional_constraints=[contact_constraint])
+            contact_constraint.set_discretization_type(1)
+            traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[contact_constraint])
+            # traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[])
             self.check_continue()
             fail = not self.execute_trajectory(traj1_retimed)
             self.get_robot().WaitForController(0)

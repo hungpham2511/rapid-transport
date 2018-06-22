@@ -1,6 +1,9 @@
 import argparse
 from . import pick_and_place
 from . import simplify_contact
+from . import robust_experiment
+import yaml
+import numpy as np
 
 
 def main():
@@ -35,6 +38,30 @@ def main():
     parser_sim.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
 
     ###########################################################################
+    #                              Robust experiment                          #
+    ###########################################################################
+    parser_rob = subparsers.add_parser('robust-experiment',
+                                       description="A program for parametrizing and "
+                                       "executing a single trajectory.")
+    parser_rob.set_defaults(which='robust-experiment')
+    parser_rob.add_argument("-s", '--scene_path')
+    parser_rob.add_argument("-r", '--robot_name')
+
+    parser_rob.add_argument("-c", '--contact_id', required=True)
+    parser_rob.add_argument("-o", '--object_id', required=True)
+    parser_rob.add_argument("-a", '--attach', required=True)
+    parser_rob.add_argument("-T", '--transform', required=True)
+    parser_rob.add_argument("-t", '--trajectory_id', required=True)
+
+    parser_rob.add_argument("-S", '--strategy', required=True)
+    parser_rob.add_argument('-v', '--verbose', action='store_true')
+    parser_rob.add_argument('-d', "--slowdown", type=float, default=0.5)
+    parser_rob.add_argument('-e', "--execute", help="If True, send commands to real hardware.",
+                            action="store_true", default=False)
+
+
+    
+    ###########################################################################
     #                           Run approprate programs                       #
     ###########################################################################
     args = parser.parse_args()
@@ -50,5 +77,12 @@ def main():
             robot_id=args.robot,
             verbose=args.verbose
         )
+    elif args.which == 'robust-experiment':
+        transform = np.array(yaml.load(args.transform), dtype=float)
+        robust_experiment.main(None, args.scene_path,
+                               args.robot_name, args.contact_id, args.object_id,
+                               args.attach, transform, args.trajectory_id, args.strategy,
+                               args.slowdown, args.execute, args.verbose)
+        
 
     return 1

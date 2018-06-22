@@ -69,6 +69,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         ----------
         robot: openravepy.Robot
         input_dict: dict
+
         """
         assert input_dict['object_attach_to'] is not None
         try:

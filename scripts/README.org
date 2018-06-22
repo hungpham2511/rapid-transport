@@ -48,7 +48,6 @@ TO start the Denso hardware
     pytest -v # or -x to 
   #+END_SRC
   
-
 * bigcup w/out skirt with blue notebook experiment
   contact: bigcup_bluenb
   attached to bluenb
@@ -69,22 +68,60 @@ TO start the Denso hardware
 
   #+END_SRC
   
-* full experiment
+* quantitative experiment
   
   the EXPERIMENT to finish.
 
   #+BEGIN_SRC sh
   transport.paper pick-demo --scene "scenarios/exp1.scenario.yaml" -e 
   #+END_SRC
-* concepts
+* robust experiment
+  target:
+  - 5 object/transform combinations
 
-  SolidObjects: three important frame {object}, {model} and {link}.
-  
-  Record of Objects in objects.yaml
-  - each entry corresponds to an object, which contains the object's
-    inertial properties: mass and moment of inertia.
-  - geometrical information of the object is also given, via
-    T_object_model and rave_model;
+    See svg file `robust_exp_configurations.svg`
 
-  Contact: Fixed rigidly to a frame {manipulator} with pose defined by
-  (position, orientation).
+    1. Configuration 1: blue notebook, its long edge is parallel to the suction cup's X-AXIS.
+
+       #+BEGIN_SRC sh
+       -o bluenb -a denso_suction_cup2 -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
+       #+END_SRC
+
+    2. Configuration 2: blue notebook, its short edge is parallel to the suction cup's X-AXIS.
+
+       #+BEGIN_SRC sh
+       -o bluenb -a denso_suction_cup2 -T "[[0, -1, 0, 0], [-1, 0, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
+       #+END_SRC
+
+    3. 
+
+       #+BEGIN_SRC sh
+       -o bluenb -a denso_suction_cup2 -T "[[1, 0, 0, 20e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
+       #+END_SRC
+    
+  - 5 trajectories
+  - 3 different strategies
+    - w_contact
+    - w_contact (use -d to scale vel to 1.3 times faster)
+    - w_contact_jerk
+    - kin_only
+    - kin_only (use -d to scale vel to 0.7 times faster)
+
+  object/transform 1: bluenb at perpendicular
+  #+BEGIN_SRC sh
+    transport.paper robust-experiment -c bigcup_bluenb_1608823082 \
+		    -o bluenb -a denso_suction_cup2 -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
+		    -t traj1 \
+		    -S nil \
+		    -d 1.0 -e -v
+  #+END_SRC
+
+  object/transform 1: bluenb at perpendicular
+  #+BEGIN_SRC sh
+    transport.paper robust-experiment -c bigcup_bluenb_1608823082 \
+		    -o bluenb -a denso_suction_cup2 -T "[[0, -1, 0, 0], [-1, 0, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
+		    -t traj1 \
+		    -S nil \
+		    -d 1.0 -e -v
+  #+END_SRC
+

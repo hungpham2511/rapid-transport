@@ -1,0 +1,8 @@
+unit: mm
+
+body:
+  kind: hollow_cube
+  mass: 0.224
+  outer_size: [180, 190, 190]
+  thickness: 10
+  com_position: [0, 0, 0]

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Kinbody name="yellow_bin">
+  <body name="base_plates">
+    <Geom type="box" modifiable="true">
+      <diffuseColor>0.7 0.7 0.7</diffuseColor>
+      <translation> 0 0 1.5e-3</translation>
+      <extents> 250e-3 157.5e-3 1.5e-3</extents>
+    </Geom>
+  </body>
+  <body name="side_plate1">
+    <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <translation> 0 -150e-3 100e-3</translation>
+      <extents> 250e-3 7.5e-3 100e-3</extents>
+    </Geom>
+     <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <extents> 100e-3 7.5e-3 10e-3</extents>
+      <translation> 150e-3 -150e-3 210.0e-3</translation>
+    </Geom>
+  </body>
+  <body name="side_plate2">
+    <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <translation> 0 150e-3 100e-3</translation>
+      <extents> 250e-3 7.5e-3 100e-3</extents>
+    </Geom>
+     <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <extents> 100e-3 7.5e-3 10e-3</extents>
+      <translation> 150e-3 150e-3 210.0e-3</translation>
+    </Geom>
+  </body>
+  <body name="back_plate">
+    <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <translation> -242.5e-3 0 100e-3</translation>
+      <extents> 7.5e-3 142.5e-3 100e-3</extents>
+    </Geom>
+  </body>
+  <body name="front_plate">
+    <Geom type="box" modifiable="true">
+      <diffuseColor>1.0 1 0.2</diffuseColor>
+      <translation> 227.5e-3 0 60e-3</translation>
+      <extents> 22.5e-3 142.5e-3 60e-3</extents>
+      <!-- <transparency> 0.5 </transparency> -->
+    </Geom>
+  </body>
+
+</Kinbody>

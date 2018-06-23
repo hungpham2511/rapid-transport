@@ -1,0 +1,7 @@
+unit: mm
+
+westone:
+  kind: cube
+  mass: 0.204
+  size: [183, 105, 55]
+  com_position: [0, 0, 27.5]

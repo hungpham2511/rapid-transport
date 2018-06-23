@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Kinbody name="carton_box">
+ <Body name="Body1" type="dynamic">
+   <Mass type="mimicgeom">
+     <density>1000</density>
+   </Mass>
+   <Geom type="box">
+     <Extents>160e-3 83e-3 22.5e-3</Extents>
+     <diffuseColor>0.8 0.8 0.0</diffuseColor>
+   </Geom>
+ </Body>
+</Kinbody>

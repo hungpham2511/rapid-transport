@@ -26,6 +26,88 @@ bigcup_bluenb_1608823082:
   position: [0, 0, 0]
   strategy: strategy10
   volume: 16.993319
+bigcup_bluenb_5db183bed2:
+  N_faces: 2119
+  N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigcup_bluenb_5db183bed2.npz
+  description: Contact between the big suction cup withoutskirt and the blue note
+    book.
+  generated_from: bigcup_bluenb
+  generated_on: '2018-06-22 14:48:35.465901'
+  id: bigcup_bluenb_5db183bed2
+  orientation:
+  - *id001
+  - *id002
+  - *id003
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 37.074304
+bigcup_bluenb_9d14c4040a:
+  N_faces: 368
+  N_vertices: 20
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigcup_bluenb_9d14c4040a.npz
+  cover_vertices: true
+  description: Contact between the big suction cup withoutskirt and the blue note
+    book.
+  generated_from: bigcup_bluenb
+  generated_on: '2018-06-23 11:05:49.074645'
+  id: bigcup_bluenb_9d14c4040a
+  orientation:
+  - *id001
+  - *id002
+  - *id003
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 15.772734
+bigcup_bluenb_f6b66fa04f:
+  N_faces: 2211
+  N_vertices: 50
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigcup_bluenb_f6b66fa04f.npz
+  description: Contact between the big suction cup withoutskirt and the blue note
+    book.
+  generated_from: bigcup_bluenb
+  generated_on: '2018-06-22 14:22:40.232730'
+  id: bigcup_bluenb_f6b66fa04f
+  orientation:
+  - *id001
+  - *id002
+  - *id003
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 32.351864
+bigcup_bluenb_safe:
+  attached_to_manipulator: denso_ft_sensor
+  description: Contact between the big suction cup withoutskirt and the blue note.
+    Very safe, no slipping nor breaking occur during collection. Might be too conservative.
+    book.
+  id: bigcup_bluenb_safe
+  orientation:
+  - &id004 [1, 0, 0]
+  - &id005 [0, 1, 0]
+  - &id006 [0, 0, 1]
+  position: [0, 0, 0]
+  raw_data: [bigcup_bluenb_safe, bigcup_bluenb_safe2, bigcup_bluenb_safe3, bigcup_bluenb_safe4]
+bigcup_bluenb_safe_9d14c4040a:
+  N_faces: 972
+  N_vertices: 32
+  attached_to_manipulator: denso_ft_sensor
+  constraint_coeffs_file: bigcup_bluenb_safe_9d14c4040a.npz
+  description: Contact between the big suction cup withoutskirt and the blue note.
+    Very safe, no slipping nor breaking occur during collection. Might be too conservative.
+    book.
+  generated_from: bigcup_bluenb_safe
+  generated_on: '2018-06-22 21:08:03.309619'
+  id: bigcup_bluenb_safe_9d14c4040a
+  orientation:
+  - *id004
+  - *id005
+  - *id006
+  position: [0, 0, 0]
+  strategy: strategy10
+  volume: 66.368879
 bigskirt_bluenb:
   N_faces: 1166392
   N_vertices: 6853
@@ -80,9 +162,9 @@ bigskirt_squarewood2:
     New one. Skirt has cuts to avoid secondary sealing effect.
   id: bigskirt_squarewood2
   orientation:
-  - &id004 [1, 0, 0]
-  - &id005 [0, 1, 0]
-  - &id006 [0, 0, 1]
+  - &id007 [1, 0, 0]
+  - &id008 [0, 1, 0]
+  - &id009 [0, 0, 1]
   position: [0, 0, 0]
   raw_data: [bigskirt_squarewood2]
 bigskirt_squarewood2_a2e54d1ae4:
@@ -96,9 +178,9 @@ bigskirt_squarewood2_a2e54d1ae4:
   generated_on: '2018-06-18 14:50:54.960725'
   id: bigskirt_squarewood2_a2e54d1ae4
   orientation:
-  - *id004
-  - *id005
-  - *id006
+  - *id007
+  - *id008
+  - *id009
   position: [0, 0, 0]
   strategy: strategy10
   volume: 62.775954

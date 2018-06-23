@@ -58,6 +58,11 @@ TO start the Denso hardware
 		    -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
 		    -r suctioncup1 -v
 
+    transport.paper simplify-contact -c bigcup_bluenb\
+		    -o squarewood2 -a denso_suction_cup2\
+		    -T "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
+		    -r suctioncup1 -v
+
     python parametrize_trajectory.py -c bigcup_bluenb_1608823082\
 	   -o bluenb -a denso_suction_cup2\
 	   -T "[[1, 0, 0, 0e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]"\
@@ -93,7 +98,7 @@ TO start the Denso hardware
        -o bluenb -a denso_suction_cup2 -T "[[0, -1, 0, 0], [-1, 0, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
        #+END_SRC
 
-    3. 
+    3. Same as configuration 1: the notebook is shifted 2 cm along the suctioncup's X-AXIS
 
        #+BEGIN_SRC sh
        -o bluenb -a denso_suction_cup2 -T "[[1, 0, 0, 20e-3], [0, -1, 0, 0], [0, 0, -1, 12.5e-3], [0, 0, 0, 1]]" \
@@ -101,11 +106,22 @@ TO start the Denso hardware
     
   - 5 trajectories
   - 3 different strategies
+    - nil
     - w_contact
     - w_contact (use -d to scale vel to 1.3 times faster)
     - w_contact_jerk
     - kin_only
     - kin_only (use -d to scale vel to 0.7 times faster)
+  - contacs profiles
+    bigcup_bluenb_1608823082 (original)
+
+    bigcup_bluenb_f6b66fa04f
+
+    bigcup_bluenb_5db183bed2
+
+    bigcup_bluenb_9d14c4040a (generated with COVER_VERTICES)
+
+    bigcup_bluenb_safe_9d14c4040a (a new set of contact, generated with safe traj)
 
   object/transform 1: bluenb at perpendicular
   #+BEGIN_SRC sh
@@ -125,3 +141,25 @@ TO start the Denso hardware
 		    -d 1.0 -e -v
   #+END_SRC
 
+
+  Results for configuration 1:
+
+  format for each : Record(F/S)x5-TrajectoryDuration
+
+
+  | Traj\Algorithm    | nil | kin_only | kin_only_0.8speed | w_contact |   |
+  |-------------------+-----+----------+-------------------+-----------+---|
+  | suctioncup_traj1  | S   | S        |                   | S         |   |
+  | suctioncup_traj2  | F   | S        |                   | S         |   |
+  | suctioncup_traj3  | F   | S        |                   | S         |   |
+  | suctioncup_traj4  | F   | F        |                   | S         |   |
+  | suctioncup_traj5a | S   | F        |                   | S         |   |
+  | traj1             | S   | S        |                   | S         |   |
+  | traj2             | F   | F        |                   | S         |   |
+  | traj3             | F   | F        |                   | F         |   |
+  | traj4             |     |          |                   |           |   |
+  | traj6             |     |          |                   |           |   |
+  | traj7             |     |          |                   |           |   |
+  | traj8             |     |          |                   |           |   |
+  | traj9             |     |          |                   |           |   |
+  | traj10            |     |          |                   |           |   |

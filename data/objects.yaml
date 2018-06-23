@@ -93,6 +93,22 @@ squarewood:
     - [0, 0, -1]
 # "[[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 23.5e-3], [0, 0, 0, 1]]"
 
+bluenb_safe:
+  description: The blue PaperLuxe book.
+  attached_to_manipulator: denso_suction_cup2
+  attached_to_robot: denso_ft_sensor_suction.robot.xml
+  rave_model: objects/bluenb.xml
+  mass: 0.6
+  local_inertia:
+    - [ 10.28e-4, 0,        0     ]
+    - [ 0,        2.31e-3, 0     ]
+    - [ 0,        0,       3.28e-3]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0]
+    - [0, 0, 0, 1]
+
 bluenb:
   description: The blue PaperLuxe book.
   attached_to_manipulator: denso_suction_cup2
@@ -229,6 +245,21 @@ heavy_alum_1:
     - [  7.05000000e-05,   0.00000000e+00,   0.00000000e+00]
     - [  0.00000000e+00,   38.8000000e-05,   0.00000000e+00]
     - [  0.00000000e+00,   0.00000000e+00,   45.2620833e-05]
+  T_object_model:
+    - [1, 0, 0, 0]
+    - [0, 1, 0, 0]
+    - [0, 0, 1, 0.01]
+    - [0, 0, 0, 1]
+
+
+very_heavy_alum:
+  description: The very heavy darkish aluminum block.
+  rave_model: objects/heavy_alum.xml
+  mass: 0.64
+  local_inertia:
+    - [  8.64e-05,   0,   0]
+    - [  0,   8.64e-04,   0]
+    - [  0,   0,   9.16e-04]
   T_object_model:
     - [1, 0, 0, 0]
     - [0, 1, 0, 0]

@@ -1,3 +1,16 @@
+bigcup_analytical_rigid3:
+  id: bigcup_analytical_rigid3
+  attached_to_manipulator: denso_suction_cup2
+  description: Contact stability constraint coefficients derived from an anlytical model of the suction cup. params--mu = 0.25, PA=18, N=6, r=10.5e-3
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  constraint_coeffs_file: bigcup_analytical_rigid3.npz
+
+
+
 bigcup_analytical_rigid2:
   id: bigcup_analytical_rigid2
   attached_to_manipulator: denso_suction_cup2

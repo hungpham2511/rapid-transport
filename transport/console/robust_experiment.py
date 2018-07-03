@@ -3,9 +3,14 @@ from ..solidobject import SolidObject
 from ..contact import Contact
 from ..toppra_constraints import create_object_transporation_constraint
 
+try:
+    import raveutils
+    import rospy
+    from denso_control.controllers import JointPositionController
+except ImportError as e:
+    print e
+    pass
 import ftsensorless as ft
-import rospy
-from denso_control.controllers import JointPositionController
 import openravepy as orpy
 import numpy as np
 import toppra
@@ -55,6 +60,137 @@ def get_path_from_trajectory_id(trajectory_id):
     return path
 
 
+def get_list_of_paths_from_string(robot, input_string):
+    """
+    """
+    try:
+        seed = int(input_string)
+        return [gen_path(robot, seed)]
+    except ValueError:
+        # input string is not a single integer. e.g.  "1"
+        pass
+
+    try:
+        seed_list = map(int, input_string.split(","))
+        return [gen_path(robot, seed) for seed in seed_list]
+    except ValueError:
+        # input string is not sequence of integer separated by colons. e.g. "1,2,3"
+        pass
+
+    try:
+        seed0, seed1 = map(int, input_string.split("-"))
+        return [gen_path(robot, seed) for seed in range(seed0, seed1)]
+    except ValueError:
+        # input string is two integers separated by dash. e.g. "1-3"
+        pass
+
+    # last resort, check database
+    return [get_path_from_trajectory_id(input_string)]
+
+
+pos1 = np.r_[0.5, -0.3, 0.3]
+pos2 = np.r_[0.5, 0.3, 0.4]
+size = np.r_[0.2, 0.2, 0.6]
+q_nominal1 = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
+q_nominal2 = np.r_[ 0.3, 0.9, 0.9, 0, 0, 0]
+
+
+def gen_path(robot, seed, max_ppiters=60, max_iters=100):
+    """ Generate a collision-free path from a random integer seed.
+    """
+    np.random.seed(seed)
+    q_cur = robot.GetActiveDOFValues()
+    robot.SetActiveDOFValues(np.zeros(6))
+    all_grabbed = robot.GetGrabbed()
+    while True:
+        with robot:
+            robot.ReleaseAllGrabbed()
+            manip = robot.GetActiveManipulator()
+            
+            # randomize pose1 and pose2
+            xy1 = (np.random.rand(3) - 0.5) * size + pos1
+            rot1 = (np.random.rand() - 0.5) * np.pi * 0.9
+            xy2 = (np.random.rand(3) - 0.5) * size + pos2
+            rot2 = (np.random.rand() - 0.5) * np.pi * 0.9
+            
+            # nominal transform of the end-effector
+            T_nominal = np.array([[1.0, 0, 0, 0],
+                                  [0, -1.0, 0, 0],
+                                  [0, 0, -1.0, 0],
+                                  [0, 0, 0, 1.0]])
+
+            T_manip_1 = np.dot(T_nominal, orpy.matrixFromAxisAngle([0, 0, rot1]))
+            T_manip_1[:3, 3] = xy1
+            T_manip_2 = np.dot(T_nominal, orpy.matrixFromAxisAngle([0, 0, rot2]))
+            T_manip_2[:3, 3] = xy2
+
+            qgoals1 = manip.FindIKSolutions(T_manip_1, orpy.IkFilterOptions.CheckEnvCollisions)
+            qgoals2 = manip.FindIKSolutions(T_manip_2, orpy.IkFilterOptions.CheckEnvCollisions)
+
+            # Kinematic infeasible
+            if len(qgoals1) == 0 or len(qgoals2) == 0:
+                continue
+
+            # select configurations that are closest to the nominal configurations
+            qgoal1 = qgoals1[np.argmin(np.linalg.norm(qgoals1 - q_nominal1, 1))]
+            qgoal2 = qgoals2[np.argmin(np.linalg.norm(qgoals2 - q_nominal2, 1))]
+
+            # weird configurations, skip
+            if qgoal1[1] < 0 or qgoal1[2] < 0 or qgoal2[1] < 0 or qgoal2[2] < 0:
+                continue
+
+        for body in all_grabbed:
+            robot.Grab(body)
+
+        robot.SetActiveDOFValues(qgoal2)
+
+        # Plan trajectory
+        traj0 = raveutils.planning.plan_to_joint_configuration(
+            robot, qgoal1, max_ppiters=max_ppiters, max_iters=max_iters)
+
+        if traj0 is None:
+            continue
+
+        # filter trajectory by angle
+        with robot:
+            spec = traj0.GetConfigurationSpecification()
+            waypoints = []
+            ss_waypoints = []
+            skip = False
+            for i in range(traj0.GetNumWaypoints()):
+                data = traj0.GetWaypoint(i)
+                dt = spec.ExtractDeltaTime(data)
+                if dt > 1e-5 or len(waypoints) == 0:  # If delta is too small, skip it.
+                    if len(ss_waypoints) == 0:
+                        ss_waypoints.append(0)
+                    else:
+                        ss_waypoints.append(ss_waypoints[-1] + dt)
+                    q = spec.ExtractJointValues(data, robot, robot.GetActiveDOFIndices())
+                    waypoints.append(q)
+                    robot.SetActiveDOFValues(q)
+                    z_dir = manip.GetTransform()[:3, 2]
+                    angle = np.arccos(np.dot(z_dir, [0, 0, -1]))
+                    if angle > 1.0:
+                        skip = True
+            if skip:
+                continue
+            ss_waypoints = np.array(ss_waypoints) / ss_waypoints[-1]
+            path = toppra.SplineInterpolator(ss_waypoints, waypoints)
+
+        return path
+
+        print("[___]")
+        robot.SetDOFValues(qgoal1)
+        print qgoal1
+        raw_input()
+        robot.SetDOFValues(qgoal2)
+        print qgoal2
+        raw_input()
+        robot.GetController().SetPath(traj0)
+        robot.WaitForController(0)
+    pass
+
+
 def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, safety=1.0):
     """ An entry point to the robust experiment.
 
@@ -77,11 +213,13 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     safety : float
         Effect not well understood, do not used.
     """
+    # setup
     if env is None:
         env = orpy.Environment()
         env.SetViewer('qtosg')
     else:
         env.Reset()
+        env.SetViewer('qtosg')
     if verbose:
         import coloredlogs
         coloredlogs.install(level='DEBUG')
@@ -93,6 +231,12 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     env.Load(scene_path)
     robot = env.GetRobot(robot_name)
     manip = robot.SetActiveManipulator(attach)
+    iktype = orpy.IkParameterization.Type.Transform6D
+    ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(robot, iktype=iktype)
+    if not ikmodel.load():
+        print 'Generating IKFast {0}. It will take few minutes...'.format(iktype.name)
+        ikmodel.autogenerate()
+        print 'IKFast {0} has been successfully generated'.format(iktype.name)
     arm_indices = manip.GetArmIndices()
     db = Database()
 
@@ -107,6 +251,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     object_model.SetTransform(T_object)
     robot.Grab(object_model)
 
+    # load contact
     contact = Contact.init_from_profile_id(robot, contact_id)
     contact.g_local = contact.g_local * safety
 
@@ -124,163 +269,164 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     pc_accel.set_discretization_type(1)
 
     # setup toppra instance
-    path = get_path_from_trajectory_id(trajectory_id)
-    gridpoints = np.linspace(0, 1, 201)
+    list_of_paths = get_list_of_paths_from_string(robot, trajectory_id)
+    for path in list_of_paths:
+        gridpoints = np.linspace(0, 1, 101)
 
-    # solve
-    dt = 6.67e-3
-    data = None
-    fail = False
-    # no strategy, only spline interpolation
-    if strategy == "nil":
-        print("Run with Strategy==[nil]")
-        path = toppra.SplineInterpolator(path.ss_waypoints, path.waypoints, bc_type='clamped')
-        ts = np.arange(0, path.get_duration(), dt * slowdown)
-        qs = path.eval(ts)
-        qds = path.evald(ts) * slowdown
-        qdds = path.evaldd(ts) * slowdown ** 2
-        ts = ts / slowdown
-        q_init = path.eval(0)
-    # parametrize considering kinematics constraint only
-    elif strategy == "kin_only":
-        instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel], path,
-                                           gridpoints=gridpoints, solver_wrapper='hotqpOASES')
-        traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
-        ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
-        qs = traj_ra.eval(ts)
-        qds = traj_ra.evald(ts) * slowdown
-        qdds = traj_ra.evaldd(ts) * slowdown ** 2
-        q_init = traj_ra.eval(0)
-        ts = ts / slowdown
-    # parameterization considering contact stability and kinematic constraints
-    elif strategy == "w_contact":
-        instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
-                                           gridpoints=gridpoints, solver_wrapper='hotqpOASES')
-        traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
-        if traj_ra is not None:
+        # solve
+        dt = 6.67e-3
+        data = None
+        fail = False
+        # no strategy, only spline interpolation
+        if strategy == "nil":
+            print("Run with Strategy==[nil]")
+            path = toppra.SplineInterpolator(path.ss_waypoints, path.waypoints, bc_type='clamped')
+            ts = np.arange(0, path.get_duration(), dt * slowdown)
+            qs = path.eval(ts)
+            qds = path.evald(ts) * slowdown
+            qdds = path.evaldd(ts) * slowdown ** 2
+            ts = ts / slowdown
+            q_init = path.eval(0)
+        # parametrize considering kinematics constraint only
+        elif strategy == "kin_only":
+            instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel], path,
+                                               gridpoints=gridpoints, solver_wrapper='hotqpOASES')
+            traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
             ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
             qs = traj_ra.eval(ts)
             qds = traj_ra.evald(ts) * slowdown
             qdds = traj_ra.evaldd(ts) * slowdown ** 2
             q_init = traj_ra.eval(0)
             ts = ts / slowdown
+        # parameterization considering contact stability and kinematic constraints
+        elif strategy == "w_contact":
+            instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
+                                               gridpoints=gridpoints, solver_wrapper='hotqpOASES')
+            traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
+            if traj_ra is not None:
+                ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
+                qs = traj_ra.eval(ts)
+                qds = traj_ra.evald(ts) * slowdown
+                qdds = traj_ra.evaldd(ts) * slowdown ** 2
+                q_init = traj_ra.eval(0)
+                ts = ts / slowdown
+            else:
+                print("Parameterization fails!")
+                fail = True
+        # parameterization considering contact stability, kinematic constraints and jerk contraints
+        elif strategy == "w_contact_jerk":
+            instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
+                                               gridpoints=gridpoints, solver_wrapper='hotqpOASES')
+            _, sd_vec, _ = instance.compute_parameterization(0, 0)
+            xs = sd_vec ** 2
+            ds = gridpoints[1] - gridpoints[0]
+            t0 = time.time()
+            N = gridpoints.shape[0] - 1
+            sddd_bnd = 20
+            # matrix for computing jerk: 
+            # Jmat = [-2  1 .....  ]
+            #        [ 1 -2  1 ... ]
+            #        [ 0  1 -2 1 ..]
+            Jmat = np.zeros((N+1, N+1))   
+            for i in range(N+1):
+                Jmat[i, i] = -2
+            for i in range(N):
+                Jmat[i + 1, i] = 1
+                Jmat[i, i + 1] = 1
+            Jmat = Jmat / ds ** 2
+
+            # matrix for differentiation
+            Amat = np.zeros((N, N + 1))
+            for i in range(N):
+                Amat[i, i] = -1
+                Amat[i, i + 1] = 1
+            Amat = Amat / 2 / ds
+
+            xs_var = cvx.Variable(N + 1)
+            x_pprime_var = Jmat * xs_var
+            s_dddot_var = cvx.mul_elemwise(np.sqrt(xs) + 1e-5, x_pprime_var)
+            residue = cvx.Variable()
+
+            constraints = [xs_var >= 0,
+                           xs_var[0] == 0,
+                           xs_var[-1] == 0,
+                           xs_var <= xs,
+                           0 <= residue,
+                           s_dddot_var - sddd_bnd <= residue,
+                           -sddd_bnd - s_dddot_var <= residue]
+
+            obj = cvx.Minimize(1.0 / N * cvx.norm(xs_var - xs, 1)
+                               + 1.0 / N * cvx.norm(Amat.dot(xs) - Amat * xs_var, 1)
+                               + 1.0 * residue)
+            prob = cvx.Problem(obj, constraints)
+            status = prob.solve()
+
+            print "post-processing takes {:f} seconds".format(time.time() - t0)
+            print "Problem status {:}".format(status)
+            print "residual value: {:f}".format(residue.value)
+            xs_new = np.array(xs_var.value).flatten()
+            xs_new[0] = 0
+            xs_new[-1] = 0
+
+            # Compute trajectory
+            ss = np.linspace(0, 1, N + 1)
+            ts = [0]
+            for i in range(1, N + 1):
+                sd_ = (np.sqrt(xs_new[i]) + np.sqrt(xs_new[i - 1])) / 2
+                ts.append(ts[-1] + (ss[i] - ss[i - 1]) / sd_)
+            q_grid = path.eval(ss)
+            # joint_traj = toppra.SplineInterpolator(ts, q_grid, bc_type='natural')
+            traj_ra = toppra.SplineInterpolator(ts, q_grid, bc_type='clamped')
+            ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
+            qs = traj_ra.eval(ts)
+            qds = traj_ra.evald(ts) * slowdown
+            qdds = traj_ra.evaldd(ts) * slowdown ** 2
+            q_init = traj_ra.eval(0)
+            ts = ts / slowdown       
+        # Plot profile
+        transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
+        fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
+            strategy, object_id, transform_hash, trajectory_id, slowdown)
+        if data is not None:
+            sdd_grid, sd_grid, v_grid, K = data
+            fig = plt.figure()
+            if sd_grid is not None:
+                plt.plot(gridpoints, sd_grid ** 2)
+            plt.plot(gridpoints, K[:, 0])
+            plt.plot(gridpoints, K[:, 1])
+            plt.xlim(gridpoints[0] - 0.01, gridpoints[-1] + 0.01)
+            fig.savefig(os.path.join(_tmp_dir, "{:}_profile.pdf".format(fig_name)))
+            plt.show()
+        if fail:
+            exit("Program terminates!")
+
+        # log_trajectory_plot
+        fig = plot_trajectory_fig(ts, qs, qds, qdds)
+        fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
+
+        # execute the trajectory
+        print("Trajectory duration {:f} secs".format(ts[-1]))
+        if execute:
+            n = rospy.init_node("abc")
+            joint_controller = JointPositionController("denso")
+            ft.rave_utils.move_to_joint_position(
+                q_init, joint_controller, robot, dt=dt, require_confirm=True,
+                velocity_factor=0.2, acceleration_factor=0.2)
+            cmd = raw_input("Execute the trajectory y/[N]?  ")
+            if cmd != "y":
+                print("Does not execute anything. Exit.")
+                exit()
+            print("Executing trajectory slowed down by {:f}.".format(slowdown))
+            for q in qs:
+                t0 = rospy.get_time()
+                joint_controller.set_joint_positions(q)
+                robot.SetDOFValues(q, range(6))
+                t_elapsed = rospy.get_time() - t0
+                rospy.sleep(dt - t_elapsed)
+            print("Trajectory execution finished! Exit now.")
         else:
-            print("Parameterization fails!")
-            fail = True
-    # parameterization considering contact stability, kinematic constraints and jerk contraints
-    elif strategy == "w_contact_jerk":
-        instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
-                                           gridpoints=gridpoints, solver_wrapper='hotqpOASES')
-        _, sd_vec, _ = instance.compute_parameterization(0, 0)
-        xs = sd_vec ** 2
-        ds = gridpoints[1] - gridpoints[0]
-        t0 = time.time()
-        N = gridpoints.shape[0] - 1
-        sddd_bnd = 20
-        # matrix for computing jerk: 
-        # Jmat = [-2  1 .....  ]
-        #        [ 1 -2  1 ... ]
-        #        [ 0  1 -2 1 ..]
-        Jmat = np.zeros((N+1, N+1))   
-        for i in range(N+1):
-            Jmat[i, i] = -2
-        for i in range(N):
-            Jmat[i + 1, i] = 1
-            Jmat[i, i + 1] = 1
-        Jmat = Jmat / ds ** 2
-
-        # matrix for differentiation
-        Amat = np.zeros((N, N + 1))
-        for i in range(N):
-            Amat[i, i] = -1
-            Amat[i, i + 1] = 1
-        Amat = Amat / 2 / ds
-
-        xs_var = cvx.Variable(N + 1)
-        x_pprime_var = Jmat * xs_var
-        s_dddot_var = cvx.mul_elemwise(np.sqrt(xs) + 1e-5, x_pprime_var)
-        residue = cvx.Variable()
-
-        constraints = [xs_var >= 0,
-                       xs_var[0] == 0,
-                       xs_var[-1] == 0,
-                       xs_var <= xs,
-                       0 <= residue,
-                       s_dddot_var - sddd_bnd <= residue,
-                       -sddd_bnd - s_dddot_var <= residue]
-
-        obj = cvx.Minimize(1.0 / N * cvx.norm(xs_var - xs, 1)
-                           + 1.0 / N * cvx.norm(Amat.dot(xs) - Amat * xs_var, 1)
-                           + 1.0 * residue)
-        prob = cvx.Problem(obj, constraints)
-        status = prob.solve()
-
-        print "post-processing takes {:f} seconds".format(time.time() - t0)
-        print "Problem status {:}".format(status)
-        print "residual value: {:f}".format(residue.value)
-        xs_new = np.array(xs_var.value).flatten()
-        xs_new[0] = 0
-        xs_new[-1] = 0
-
-        # Compute trajectory
-        ss = np.linspace(0, 1, N + 1)
-        ts = [0]
-        for i in range(1, N + 1):
-            sd_ = (np.sqrt(xs_new[i]) + np.sqrt(xs_new[i - 1])) / 2
-            ts.append(ts[-1] + (ss[i] - ss[i - 1]) / sd_)
-        q_grid = path.eval(ss)
-        # joint_traj = toppra.SplineInterpolator(ts, q_grid, bc_type='natural')
-        traj_ra = toppra.SplineInterpolator(ts, q_grid, bc_type='clamped')
-        ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
-        qs = traj_ra.eval(ts)
-        qds = traj_ra.evald(ts) * slowdown
-        qdds = traj_ra.evaldd(ts) * slowdown ** 2
-        q_init = traj_ra.eval(0)
-        ts = ts / slowdown       
-    # Plot profile
-    transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
-    fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
-        strategy, object_id, transform_hash, trajectory_id, slowdown)
-    if data is not None:
-        sdd_grid, sd_grid, v_grid, K = data
-        fig = plt.figure()
-        if sd_grid is not None:
-            plt.plot(gridpoints, sd_grid ** 2)
-        plt.plot(gridpoints, K[:, 0])
-        plt.plot(gridpoints, K[:, 1])
-        plt.xlim(gridpoints[0] - 0.01, gridpoints[-1] + 0.01)
-        fig.savefig(os.path.join(_tmp_dir, "{:}_profile.pdf".format(fig_name)))
-        plt.show()
-    if fail:
-        exit("Program terminates!")
-
-    # log_trajectory_plot
-    fig = plot_trajectory_fig(ts, qs, qds, qdds)
-    fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
-
-    # execute the trajectory
-    print("Trajectory duration {:f} secs".format(ts[-1]))
-    if execute:
-        n = rospy.init_node("abc")
-        joint_controller = JointPositionController("denso")
-        ft.rave_utils.move_to_joint_position(
-            q_init, joint_controller, robot, dt=dt, require_confirm=True,
-            velocity_factor=0.2, acceleration_factor=0.2)
-        cmd = raw_input("Execute the trajectory y/[N]?  ")
-        if cmd != "y":
-            print("Does not execute anything. Exit.")
-            exit()
-        print("Executing trajectory slowed down by {:f}.".format(slowdown))
-        for q in qs:
-            t0 = rospy.get_time()
-            joint_controller.set_joint_positions(q)
-            robot.SetDOFValues(q, range(6))
-            t_elapsed = rospy.get_time() - t0
-            rospy.sleep(dt - t_elapsed)
-        print("Trajectory execution finished! Exit now.")
-    else:
-        for q in qs:
-            robot.SetDOFValues(q, range(6))
-            time.sleep(dt)
+            for q in qs:
+                robot.SetDOFValues(q, range(6))
+                time.sleep(dt)
 
     return True

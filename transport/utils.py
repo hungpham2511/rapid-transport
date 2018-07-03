@@ -20,10 +20,12 @@ def setup_logging(level="INFO"):
 def preview_plot(args, dur=3):
     """Preview data tuples given in args.
 
-    Each argument in `args` is (points, marker, size).
+    Each argument in `args` is (points, marker, params_dict).
 
     Each `points` is a (N,6) float array. The first three dimensions
     are for torque and the last three dimensions are for force.
+
+    The simplest parameter dictionary is {}.
 
     Parameters
     ----------

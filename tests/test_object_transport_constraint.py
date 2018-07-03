@@ -49,7 +49,7 @@ def test_basic_contact_obj_coincides(setup, si, T_eo, utest, xtest):
     g = np.hstack((np.ones(6), np.ones(6)))
     contact = transport.Contact(robot, ft_name, T_eo, F, g)
 
-    pc_object_trans = transport.create_object_transporation_constraint(contact, solid_object)
+    pc_object_trans = transport.create_object_transporation_constraint(contact, solid_object, discretization_scheme=0)
 
     # TOPPRA parameters
     waypoints = np.array([
@@ -60,7 +60,11 @@ def test_basic_contact_obj_coincides(setup, si, T_eo, utest, xtest):
 
     path = ta.SplineInterpolator(np.linspace(0, 1, 4), waypoints)
     params = pc_object_trans.compute_constraint_params(path, [si])[:5]
-    ai, bi, ci, Fi, gi = zip(*params)[0]
+    ai = params[0][0]
+    bi = params[1][0]
+    ci = params[2][0]
+    Fi = params[3]
+    gi = params[4]
     # Correct coefficient
     q_ = path.eval(si)
     qd_ = path.evald(si) * np.sqrt(xtest)
@@ -73,6 +77,3 @@ def test_basic_contact_obj_coincides(setup, si, T_eo, utest, xtest):
     np.testing.assert_allclose(g, gi)
     np.testing.assert_allclose(ai * utest + bi * xtest + ci, w_contact)
     np.testing.assert_allclose(Fi.dot(ai * utest + bi * xtest + ci) - gi, Fi.dot(w_contact) - gi)
-
-
-

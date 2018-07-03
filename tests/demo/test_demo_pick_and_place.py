@@ -30,7 +30,7 @@ def test_run(setup_demo, monkeypatch):
     demo, robot_name = setup_demo
     assert demo.run()
 
-
+@pytest.mark.skip(reason="skip hardware test")
 def test_run_hw(setup, monkeypatch):
     monkeypatch.setattr("__builtin__.raw_input", lambda s: "")
     demo = PickAndPlaceDemo("scenarios/test0.scenario.yaml", env=setup, execute_hw=True)

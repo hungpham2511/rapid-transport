@@ -1,3 +1,34 @@
+bigcup_analytical_rigid2:
+  id: bigcup_analytical_rigid2
+  attached_to_manipulator: denso_suction_cup2
+  description: Contact stability constraint coefficients derived from an anlytical model of the suction cup.
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  constraint_coeffs_file: bigcup_analytical_rigid2.npz
+
+bigcup_analytical_rigid:
+  id: bigcup_analytical_rigid
+  attached_to_manipulator: denso_suction_cup2
+  description: Contact stability constraint coefficients derived from an anlytical model of the suction cup.
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  constraint_coeffs_file: bigcup_analytical_rigid.npz
+bigcup_analytical:
+  id: bigcup_analytical
+  attached_to_manipulator: denso_suction_cup2
+  description: Contact stability constraint coefficients derived from an anlytical model of the suction cup.
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  position: [0, 0, 0]
+  constraint_coeffs_file: bigcup_analytical.npz
 bigcup_bluenb:
   attached_to_manipulator: denso_ft_sensor
   description: Contact between the big suction cup withoutskirt and the blue note
@@ -89,7 +120,8 @@ bigcup_bluenb_safe:
   - &id005 [0, 1, 0]
   - &id006 [0, 0, 1]
   position: [0, 0, 0]
-  raw_data: [bigcup_bluenb_safe, bigcup_bluenb_safe2, bigcup_bluenb_safe3, bigcup_bluenb_safe4]
+  # raw_data: [bigcup_bluenb_safe, bigcup_bluenb_safe2, bigcup_bluenb_safe3, bigcup_bluenb_safe4]
+  raw_data: [bigcup_bluenb_safe, bigcup_bluenb_safe2]
 bigcup_bluenb_safe_9d14c4040a:
   N_faces: 972
   N_vertices: 32

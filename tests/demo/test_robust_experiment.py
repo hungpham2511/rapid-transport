@@ -17,7 +17,7 @@ def test_run(setup, monkeypatch):
                                                [-1, 0, 0, 0],
                                                [0, 0, -1, 28.5e-3],
                                                [0, 0, 0, 1]]),
-                                     "traj1", "topp_with_contact", 1.0, False, False)
+                                     "traj1", "kin_only", 1.0, False, False)
     assert success
 
 

@@ -13,7 +13,8 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def main(env=None, contact_id=None, object_id=None, attach_name=None, T_link_object=None, robot_id=None, verbose=False, N_samples=200, N_vertices=50):
+
+def main(env=None, contact_id=None, object_id=None, attach_name=None, T_link_object=None, robot_id=None, verbose=False, N_samples=1000, N_vertices=50, cover_vertices=False):
     "Program to simplify contact profile."
     if verbose:
         utils.setup_logging("DEBUG")
@@ -40,14 +41,14 @@ def main(env=None, contact_id=None, object_id=None, attach_name=None, T_link_obj
         "object_attach_to": attach_name,
         "T_link_object": np.array(yaml.load(T_link_object))
     })
-    simp = ContactSimplifier(robot, contact, solid_object, N_samples=N_samples, N_vertices=N_vertices, verbose=verbose)
+    simp = ContactSimplifier(robot, contact, solid_object, N_samples=N_samples, N_vertices=N_vertices, verbose=verbose, cover_vertices=cover_vertices)
     cs_new, hull_simplified = simp.simplify()
     ###########################################################################
     #                         Save new contact to database                    #
     ###########################################################################
     new_contact_id = contact_id + "_" + hashlib.md5(
-        "strategy10" + object_id + str(N_samples)
-        + str(N_vertices) + T_link_object).hexdigest()[:10]
+        "strategy10" + object_id + str(N_samples) + str(N_vertices) + T_link_object
+    ).hexdigest()[:10]
     cmd = raw_input("Save the simplified contact as [{:}] y/[N]?".format(new_contact_id))
     if cmd != 'y':
         print("Do not save. Exit!")
@@ -58,6 +59,7 @@ def main(env=None, contact_id=None, object_id=None, attach_name=None, T_link_obj
             'id': new_contact_id,
             'N_vertices': hull_simplified.get_vertices().shape[0],
             "N_faces": hull_simplified.get_halfspaces()[0].shape[0],
+            "cover_vertices": cover_vertices,
             "volume": hull_simplified.compute_volume(),
             'description': contact_profile['description'],
             'attached_to_manipulator': contact_profile["attached_to_manipulator"],

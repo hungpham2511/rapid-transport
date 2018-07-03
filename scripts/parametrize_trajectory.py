@@ -6,24 +6,28 @@ import openravepy as orpy
 import matplotlib.pyplot as plt
 import cvxpy as cvx
 
+
 def main():
-    parse = argparse.ArgumentParser(description="A program for parametrizing trajectory. Output trajectory"
-                                    "id is generated from the ids of contact, object, robot and"
-                                    "algorithm respectively using a hash function. Hence, if two"
-                                    "trajectories are parametrized using the same setup, their ids"
-                                    "will be similar."
-                                    "")
-    parse.add_argument('-t', '--trajectory', help='Input trajectory specification.', required=False)
-    parse.add_argument('-c', '--contact', help='Profile id of the contact model', required=True)
-    parse.add_argument('-o', '--object', help='Profile id of the object to transport', required=True)
-    parse.add_argument('-a', '--attach', help='Name of the link or manipulator that the '
-                       'object is attached to.', required=False, default="denso_suction_cup2")
-    parse.add_argument('-T', '--transform', help='Transform from {link} to {object}: T_link_object',
+    # id is generated from the ids of contact, object, robot and
+    # algorithm respectively using a hash function. Hence, if two
+    # trajectories are parametrized using the same setup, their ids
+    # will be similar."
+    parse = argparse.ArgumentParser(description="A program for parametrizing trajectory subject to contact stability constraint."
+                                    " The output trajectory is stored in a database, and is later retrieved for execution.")
+    parse.add_argument('-t', '--trajectory', help='If of the input trajectory profile.')
+    parse.add_argument('-c', '--contact', help='Id of the contact profile', required=True)
+    parse.add_argument('-o', '--object', help='Id of the object profile to transport', required=True)
+    parse.add_argument('-a', '--attach', help='Name of the link (or manipulator) the '
+                       'object is attached to.', default="denso_suction_cup2")
+    parse.add_argument('-T', '--transform', help='Transform from {link} to {object}',
                        required=False, default="[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 9.080e-3], [0, 0, 0, 1]]")
-    parse.add_argument('-r', '--robot', help='Robot specification. Contain file path to openrave robot model, also its velocity and acceleration limits.', required=False, default="suctioncup1")
-    parse.add_argument('-l', '--algorithm', help='Algorithm specification.', default="topp_fast")
+    parse.add_argument('-r', '--robot', help="Id of the robot specification. Contain file path to openrave robot model,"
+                                             " also the robot\'s velocity and acceleration limits.",
+                       required=False, default="suctioncup1")
+    parse.add_argument('-l', '--algorithm', help='Id of the algorithm profile.', default="topp_fast")
     parse.add_argument('-v', '--verbose', help='More verbose output', action="store_true")
     args = vars(parse.parse_args())
+
 
     if args['verbose']:
         import coloredlogs

@@ -21,9 +21,9 @@ class ContactSimplifier(object):
 
     Parameters
     ----------
-    robot: openravepy.Robot
+    robot: openravepy Robot
     contact: Contact
-        An input contact object which  has to have a non-empty `raw_data` field.
+        An input contact object that has a non-empty `raw_data` field or a `extreme` fields.
     solid_object: SolidObject
     N_samples: int, optional
         Number of samples to generate from the object dynamics.
@@ -32,14 +32,16 @@ class ContactSimplifier(object):
     verbose: bool, optional
 
     """
-    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False, scale=0.98):
+    def __init__(self, robot, contact, solid_object, N_samples=500, N_vertices=50, verbose=False, scale=1.0, cover_vertices=False):
         self._N_samples = N_samples
         self._N_vertices = N_vertices
         self._contact = contact
         self._robot = robot
         self._solid_object = solid_object
         self._verbose = verbose
-        # Generate a the faces
+        self._cover_vertices = cover_vertices
+        # Generate or load the vertices `self._ws_all` and
+        # the faces `self.F_local, self.g_local`.
         assert len(contact.get_raw_data()) > 0, "There is no raw data to work with."
         db = Database()
         ws_list = []
@@ -54,13 +56,13 @@ class ContactSimplifier(object):
         w_mean = np.mean(ws_all, axis=0)
         ws_all = w_mean + (ws_all - w_mean) * scale
         self._ws_all = ws_all
-        logger.info("Loading finishes.")
         if self._verbose:
-            utils.preview_plot([[ws_all, 'x', {}]])
+            utils.preview_plot([[ws_all, 'x', {}]], dur=20)
         hull_full = ConvexHull(ws_all)
         F, g = hull_full.get_halfspaces()
         self._contact.F_local = F
         self._contact.g_local = g
+        logger.info("Loading finishes.")
 
     def simplify(self):
         """ Simplify contact.
@@ -98,6 +100,8 @@ class ContactSimplifier(object):
         simp_vertices = random.sample(ws_sample, 8)
         hull = poly_contact.ConvexHull(simp_vertices)
         N_vertices = hull.vertices.shape[0]
+        A_cover = []
+        b_cover = []
         while N_vertices < self._N_vertices:
             logger.debug("[Projection] N_vertices={:d}".format(N_vertices))
             logger.debug("[Projection] total number of point {:d}".format(len(simp_vertices)))
@@ -114,20 +118,29 @@ class ContactSimplifier(object):
                 # samples do not get selected twice.
                 face_residue = np.sum(residues[np.where(residues > 1e-8)])
                 if face_residue > max_residue:
-                    face_to_expand = i
+                    face_to_expand = int(i)
                     max_residue = face_residue
 
             if face_to_expand is None:
                 # This mean all red vertices have been found
                 logger.info("Cover inner set!")
                 break
-            else:
-                opt_vertex_index = np.argmax(self._ws_all.dot(A[face_to_expand]))
+
+            opt_vertex_index = np.argmax(self._ws_all.dot(A[face_to_expand]))
+            logger.debug("[Projection] Max residue {:f}".format(max_residue))
+            # Add constraints to exclude the furthermost edge
+            if self._cover_vertices:
+                A_cover.append(np.array(A[face_to_expand]))
+                b_cover.append(b[face_to_expand] + max_residue * 0.9)
 
             simp_vertices.append(self._ws_all[opt_vertex_index])
             hull = poly_contact.ConvexHull(simp_vertices)
             N_vertices = hull.vertices.shape[0]
         simp_vertices = np.array(simp_vertices)
+        if len(A_cover) > 0:
+            logger.info("COVER_VERTICES is true, stacking {:d} more constraints".format(len(b_cover)))
+            A = np.vstack((A, A_cover))
+            b = np.hstack((b, b_cover))
 
         if self._verbose:
             utils.preview_plot([[self._ws_all, "x", {"markersize": 2}],

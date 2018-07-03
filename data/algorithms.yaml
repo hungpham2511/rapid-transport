@@ -1,10 +1,10 @@
 topp_fast:
   kind: time-optimal
-  N: 50
+  N: 100
   interpolate_kinematics: True
   interpolate_dynamics: False
   sampling_period: 0.006666666666666667
-  solver_wrapper: qpOASES
+  solver_wrapper: hotqpOASES
 
 topp_fast_2:
   kind: time-optimal

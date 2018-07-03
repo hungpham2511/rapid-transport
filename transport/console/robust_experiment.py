@@ -16,8 +16,7 @@ import matplotlib.pyplot as plt
 
 import cvxpy as cvx
 
-DEFAULT_SCENE_PATH = "/home/hung/git/toppra-object-transport/models/robust-exp.env.xml"
-DEFAULT_ROBOT_NAME = "denso"
+_tmp_dir = "/home/hung/.temp.toppra/"
 
 
 def plot_trajectory_fig(ts, qs, qds, qdds):
@@ -56,18 +55,28 @@ def get_path_from_trajectory_id(trajectory_id):
     return path
 
 
-def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id,
-         strategy, slowdown, execute, verbose, safety):
-    """ A entry point for performing the ROBUST experiment.
+def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, safety=1.0):
+    """ An entry point to the robust experiment.
 
     Parameters
     ----------
-    env: 
+    env :  OpenRAVE Environment or None
+    scene_path : str
+        Path to an OpenRAVE scene.
+    robot_name : str
+        Name of the robot.
+    contact_id : str
+    object_id : str
+    attach : str
+    transform : (4,4)array
+    trajectory_id : str
+    strategy : str
+    slowdown : float
+    execute : bool
+    verbose : bool
+    safety : float
+        Effect not well understood, do not used.
     """
-    if scene_path is None:
-        scene_path = DEFAULT_SCENE_PATH
-    if robot_name is None:
-        robot_name = DEFAULT_ROBOT_NAME
     if env is None:
         env = orpy.Environment()
         env.SetViewer('qtosg')
@@ -120,35 +129,45 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
 
     # solve
     dt = 6.67e-3
+    data = None
+    fail = False
     # no strategy, only spline interpolation
     if strategy == "nil":
         print("Run with Strategy==[nil]")
+        path = toppra.SplineInterpolator(path.ss_waypoints, path.waypoints, bc_type='clamped')
         ts = np.arange(0, path.get_duration(), dt * slowdown)
         qs = path.eval(ts)
         qds = path.evald(ts) * slowdown
         qdds = path.evaldd(ts) * slowdown ** 2
         ts = ts / slowdown
         q_init = path.eval(0)
+    # parametrize considering kinematics constraint only
     elif strategy == "kin_only":
         instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel], path,
                                            gridpoints=gridpoints, solver_wrapper='hotqpOASES')
-        traj_ra, aux_traj = instance.compute_trajectory(0, 0)
+        traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
         ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
         qs = traj_ra.eval(ts)
         qds = traj_ra.evald(ts) * slowdown
         qdds = traj_ra.evaldd(ts) * slowdown ** 2
         q_init = traj_ra.eval(0)
         ts = ts / slowdown
+    # parameterization considering contact stability and kinematic constraints
     elif strategy == "w_contact":
         instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
                                            gridpoints=gridpoints, solver_wrapper='hotqpOASES')
-        traj_ra, aux_traj = instance.compute_trajectory(0, 0)
-        ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
-        qs = traj_ra.eval(ts)
-        qds = traj_ra.evald(ts) * slowdown
-        qdds = traj_ra.evaldd(ts) * slowdown ** 2
-        q_init = traj_ra.eval(0)
-        ts = ts / slowdown
+        traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
+        if traj_ra is not None:
+            ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
+            qs = traj_ra.eval(ts)
+            qds = traj_ra.evald(ts) * slowdown
+            qdds = traj_ra.evaldd(ts) * slowdown ** 2
+            q_init = traj_ra.eval(0)
+            ts = ts / slowdown
+        else:
+            print("Parameterization fails!")
+            fail = True
+    # parameterization considering contact stability, kinematic constraints and jerk contraints
     elif strategy == "w_contact_jerk":
         instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
                                            gridpoints=gridpoints, solver_wrapper='hotqpOASES')
@@ -218,16 +237,29 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         qdds = traj_ra.evaldd(ts) * slowdown ** 2
         q_init = traj_ra.eval(0)
         ts = ts / slowdown       
-
-    # log_trajectory_plot
-    fig = plot_trajectory_fig(ts, qs, qds, qdds)
+    # Plot profile
     transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
     fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
         strategy, object_id, transform_hash, trajectory_id, slowdown)
-    fig.savefig("{:}_trajectory.pdf".format(fig_name))
+    if data is not None:
+        sdd_grid, sd_grid, v_grid, K = data
+        fig = plt.figure()
+        if sd_grid is not None:
+            plt.plot(gridpoints, sd_grid ** 2)
+        plt.plot(gridpoints, K[:, 0])
+        plt.plot(gridpoints, K[:, 1])
+        plt.xlim(gridpoints[0] - 0.01, gridpoints[-1] + 0.01)
+        fig.savefig(os.path.join(_tmp_dir, "{:}_profile.pdf".format(fig_name)))
+        plt.show()
+    if fail:
+        exit("Program terminates!")
 
-    # execute
-    
+    # log_trajectory_plot
+    fig = plot_trajectory_fig(ts, qs, qds, qdds)
+    fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
+
+    # execute the trajectory
+    print("Trajectory duration {:f} secs".format(ts[-1]))
     if execute:
         n = rospy.init_node("abc")
         joint_controller = JointPositionController("denso")

@@ -18,29 +18,152 @@ import os
 import time
 import hashlib
 import matplotlib.pyplot as plt
-
 import cvxpy as cvx
 
 _tmp_dir = "/home/hung/.temp.toppra/"
 
 
-def plot_trajectory_fig(ts, qs, qds, qdds):
-    fig = plt.figure(figsize=[5, 6])
-    ax = fig.add_subplot(311)
-    ax.plot(ts, qs)
-    ax.set_title("Joint position")
-    ax = fig.add_subplot(312)
-    ax.plot(ts, qds)
-    ax.set_title("Joint velocity")
-    ax = fig.add_subplot(313)
-    ax.plot(ts, qdds)
-    ax.set_title("Joint acceleration")
-    plt.tight_layout()
-    return fig
+def get_shaper(cmd):
+    T = 6.67e-3
+    K = 0.861
+    Td = 0.054 * 2
+    if cmd == "nil":
+        input_shaper = np.ones(1)
+    elif cmd == "ZV":
+        Nd = int(Td / T)
+        input_shaper = np.zeros(Nd / 2)
+        input_shaper[0] = 1 / (1 + K)
+        input_shaper[-1] = K / (1 + K)
+    elif cmd == "ZVD":
+        Nd = int(Td / T)
+        input_shaper = np.zeros(Nd)
+        input_shaper[0] = 1.0 / (1 + 2 * K + K ** 2)
+        input_shaper[Nd / 2] = 2 * K / (1 + 2 * K + K ** 2)
+        input_shaper[Nd - 1] = K ** 2 / (1 + 2 * K + K ** 2)
+    else:
+        raise NotImplementedError
+    return input_shaper
+
+
+def shape_trajectory(qs_unshaped, shaper):
+    """ Shape input trajectory with the initialized shaper.
+    """
+    if shaper is None:
+        return qs_unshaped
+    else:
+        qs_shaped = []
+        for i in range(6):
+            qi = convole_signal(qs_unshaped[:, i], shaper, qs_unshaped[0, i])
+            qs_shaped.append(qi)
+        qs_shaped = np.array(qs_shaped).T
+        return qs_shaped
+
+
+def preview(data_dict):
+    q_shaped_arr = data_dict['shaped_trajectory']
+    transform, strategy, object_id, trajectory_id, slowdown = data_dict["problem_data"]
+    data, gridpoints = data_dict["profile_data"]
+    t_arr, q_arr, qd_arr, qdd_arr = data_dict["unshaped_trajectory"]
+    # Plot profile
+    transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
+    fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
+        strategy, object_id, transform_hash, trajectory_id, slowdown)
+    if data is not None:
+        sdd_grid, sd_grid, v_grid, K = data
+        fig = plt.figure()
+        if sd_grid is not None:
+            plt.plot(gridpoints, sd_grid ** 2)
+        plt.plot(gridpoints, K[:, 0])
+        plt.plot(gridpoints, K[:, 1])
+        plt.xlim(gridpoints[0] - 0.01, gridpoints[-1] + 0.01)
+        fig.savefig(os.path.join(_tmp_dir, "{:}_profile.pdf".format(fig_name)))
+        plt.show()
+
+    # log_trajectory_plot
+    fig, axs = plt.subplots(2, 2, figsize=[5, 6], sharex=True)
+    axs[0, 0].plot(t_arr, q_arr)
+    axs[0, 0].set_title("(unshaped) Joint position")
+    axs[1, 0].plot(6.67e-3 * np.arange(q_shaped_arr.shape[0]), q_shaped_arr)
+    axs[1, 0].set_title("(shaped) Joint position")
+    axs[0, 1].plot(t_arr, qd_arr)
+    axs[0, 1].set_title("Joint velocity")
+    axs[1, 1].plot(t_arr, qdd_arr)
+    axs[1, 1].set_title("Joint acceleration")
+    fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
+    plt.show()
+
+
+def convole_signal(x_arr, shaper, x_init):
+    """Convole `x_arr` with `shaper`. 
+
+    Note that convolution is not done directly on `x_arr` but on
+    another array `x_arr'` that is defined below:
+
+    x_arr'[i < 0] = x_init
+    x_arr'[0:N] = x_arr
+    x_arr'[N:] = x_arr[N-1]
+
+    where N is the length of x_arr.
+
+    The reason is that this array is input to a simulator which takes
+    the last value of its input as a constant, and also has initial
+    condition x_init.
+
+    """
+    N = x_arr.shape[0]
+    M = shaper.shape[0]
+    x_arr_conv = np.zeros(N + 2 * M - 2)
+    x_arr_conv[:M - 1] = x_init
+    x_arr_conv[M - 1: M + N - 1] = x_arr
+    x_arr_conv[M + N - 1:] = x_arr[-1]
+    x_arr_conv = np.convolve(x_arr_conv, shaper, mode='full')[M - 1: 2 * M + N - 2]
+    return x_arr_conv
+
+
+class TrajectoryController(object):
+    def __init__(self, robot, execute, dt=6.67e-3):
+        self._execute = execute
+        self._robot = robot
+        self._dt = dt
+        if execute:
+            n = rospy.init_node("abc")
+            self._joint_controller = JointPositionController("denso")
+
+    def execute_traj(self, q_arr):
+        # Move to the starting conf
+        cmd = raw_input("Move to starting configuration y/[N]?  ")
+        if cmd != "y":
+            print("Does not execute anything. Exit.")
+            exit()
+        if self._execute:
+            q_init = q_arr[0]
+            ft.rave_utils.move_to_joint_position(
+                q_init, self._joint_controller, self._robot, dt=self._dt, require_confirm=True,
+                velocity_factor=0.2, acceleration_factor=0.2)
+        else:
+            q_init = q_arr[0]
+            self._robot.SetActiveDOFValues(q_init)
+
+        # Execute starting trajectory
+        cmd = raw_input("Run traj? y/[N]?  ")
+        if cmd != "y":
+            print("Does not execute anything. Exit.")
+            exit()
+        rate = rospy.Rate(125)
+        if self._execute:
+            for q in q_arr:
+                self._joint_controller.set_joint_positions(q)
+                self._robot.SetDOFValues(q, range(6))
+                rate.sleep()
+        else:
+            for q in q_arr:
+                self._robot.SetDOFValues(q, range(6))
+                rate.sleep()
+        print("Trajectory execution finished! Exit now.")
 
 
 def get_path_from_trajectory_id(trajectory_id):
-    """ Read and return the path/trajectory associated with a trajectory id.
+    """ Read and return the path/trajectory by id.
     """
     db = Database()
     traj_profile = db.retrieve_profile(trajectory_id, "trajectory")
@@ -61,8 +184,9 @@ def get_path_from_trajectory_id(trajectory_id):
 
 
 def get_list_of_paths_from_string(robot, input_string):
+    """ Return a lists of paths from a command string.
     """
-    """
+    # input string is a single integer: e.g. "1" or "2"
     try:
         seed = int(input_string)
         return [gen_path(robot, seed)]
@@ -70,6 +194,7 @@ def get_list_of_paths_from_string(robot, input_string):
         # input string is not a single integer. e.g.  "1"
         pass
 
+    # input string is multiple integers separated by semi-colons: e.g. "1,2,3"
     try:
         seed_list = map(int, input_string.split(","))
         return [gen_path(robot, seed) for seed in seed_list]
@@ -84,7 +209,7 @@ def get_list_of_paths_from_string(robot, input_string):
         # input string is two integers separated by dash. e.g. "1-3"
         pass
 
-    # last resort, check database
+    # input string is an trajectory id
     return [get_path_from_trajectory_id(input_string)]
 
 
@@ -179,20 +304,9 @@ def gen_path(robot, seed, max_ppiters=60, max_iters=100):
 
         return path
 
-        print("[___]")
-        robot.SetDOFValues(qgoal1)
-        print qgoal1
-        raw_input()
-        robot.SetDOFValues(qgoal2)
-        print qgoal2
-        raw_input()
-        robot.GetController().SetPath(traj0)
-        robot.WaitForController(0)
-    pass
-
 
 def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, safety=1.0):
-    """ An entry point to the robust experiment.
+    """ Entry point to robust experiment.
 
     Parameters
     ----------
@@ -239,6 +353,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         print 'IKFast {0} has been successfully generated'.format(iktype.name)
     arm_indices = manip.GetArmIndices()
     db = Database()
+    print("... OpenRAVE and Database loaded")
 
     # load object
     object_profile = db.retrieve_profile(object_id, "object")
@@ -258,6 +373,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     # load constraints
     contact_constraint = create_object_transporation_constraint(contact, solid_object)
     contact_constraint.set_discretization_type(0)
+    print("... contact stability constraint formed")
 
     print contact_constraint
     vlim_ = np.r_[robot.GetDOFVelocityLimits()]
@@ -268,13 +384,16 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     pc_accel = toppra.constraint.JointAccelerationConstraint(alim)
     pc_accel.set_discretization_type(1)
 
+    traj_controller = TrajectoryController(robot, execute, dt=8e-3)
+
     # setup toppra instance
+    print("... {:d} path(s) loaded. start running experiment.")
     list_of_paths = get_list_of_paths_from_string(robot, trajectory_id)
     for path in list_of_paths:
         gridpoints = np.linspace(0, 1, 101)
 
         # solve
-        dt = 6.67e-3
+        dt = 8e-3
         data = None
         fail = False
         # no strategy, only spline interpolation
@@ -383,50 +502,20 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
             qdds = traj_ra.evaldd(ts) * slowdown ** 2
             q_init = traj_ra.eval(0)
             ts = ts / slowdown       
-        # Plot profile
-        transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
-        fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
-            strategy, object_id, transform_hash, trajectory_id, slowdown)
-        if data is not None:
-            sdd_grid, sd_grid, v_grid, K = data
-            fig = plt.figure()
-            if sd_grid is not None:
-                plt.plot(gridpoints, sd_grid ** 2)
-            plt.plot(gridpoints, K[:, 0])
-            plt.plot(gridpoints, K[:, 1])
-            plt.xlim(gridpoints[0] - 0.01, gridpoints[-1] + 0.01)
-            fig.savefig(os.path.join(_tmp_dir, "{:}_profile.pdf".format(fig_name)))
-            plt.show()
+
         if fail:
-            exit("Program terminates!")
+            print("... Parameterization unsuccessful!")
+            return False
 
-        # log_trajectory_plot
-        fig = plot_trajectory_fig(ts, qs, qds, qdds)
-        fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
-
+        # Shape trajectory
+        shaper = get_shaper("nil")
+        # shaper = get_shaper("ZVD")
+        q_arr = shape_trajectory(qs, shaper)
+        # preview stuffs
+        preview({"unshaped_trajectory": (ts, qs, qds, qdds),
+                 "profile_data": (data, gridpoints),
+                 "shaped_trajectory": q_arr,
+                 "problem_data": (transform, strategy, object_id, trajectory_id, slowdown)})
         # execute the trajectory
-        print("Trajectory duration {:f} secs".format(ts[-1]))
-        if execute:
-            n = rospy.init_node("abc")
-            joint_controller = JointPositionController("denso")
-            ft.rave_utils.move_to_joint_position(
-                q_init, joint_controller, robot, dt=dt, require_confirm=True,
-                velocity_factor=0.2, acceleration_factor=0.2)
-            cmd = raw_input("Execute the trajectory y/[N]?  ")
-            if cmd != "y":
-                print("Does not execute anything. Exit.")
-                exit()
-            print("Executing trajectory slowed down by {:f}.".format(slowdown))
-            for q in qs:
-                t0 = rospy.get_time()
-                joint_controller.set_joint_positions(q)
-                robot.SetDOFValues(q, range(6))
-                t_elapsed = rospy.get_time() - t0
-                rospy.sleep(dt - t_elapsed)
-            print("Trajectory execution finished! Exit now.")
-        else:
-            for q in qs:
-                robot.SetDOFValues(q, range(6))
-                time.sleep(dt)
-
+        traj_controller.execute_traj(q_arr)
     return True

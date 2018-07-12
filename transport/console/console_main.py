@@ -60,9 +60,10 @@ def main():
                             "Can be `kin_only` or `w_contact`.", required=True)
     parser_rob.add_argument('-v', '--verbose', help="Show additional messages.", action='store_true')
     parser_rob.add_argument('-d', "--slowdown", type=float, default=1.0)
-    parser_rob.add_argument('-e', "--execute", help="If True, send commands to real hardware. "
-                            "Otherwise, only run in OpenRAVE environment.",
-                            action="store_true", default=False)
+    parser_rob.add_argument('-e', "--execute", help="If equals 1, send commands to JointPositionController. "
+                            "If equals 2, send commands to JointTrajectoryController. "
+                            "Otherwise, only run with OpenRAVE",
+                            default=0, type=int)
     parser_rob.add_argument('-y', "--safety", type=float, default=1.0)  # DEPRECATED
     ###########################################################################
     #                           Run approprate programs                       #

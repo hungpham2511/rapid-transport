@@ -6,7 +6,12 @@ from ..toppra_constraints import create_object_transporation_constraint
 try:
     import raveutils
     import rospy
-    from denso_control.controllers import JointPositionController
+    from denso_control.controllers import (JointPositionController,
+                                           JointControllerBase,
+                                           JointTrajectoryController)
+    from object_transport.srv import (ExecTrajectorybCap, ExecTrajectorybCapRequest,
+                                      ExecTrajectorybCapResponse)
+    from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 except ImportError as e:
     print e
     pass
@@ -21,6 +26,23 @@ import matplotlib.pyplot as plt
 import cvxpy as cvx
 
 _tmp_dir = "/home/hung/.temp.toppra/"
+
+
+def ros_traj_from_rave(robot, traj):
+    ros_traj = JointTrajectory()
+    ros_traj.joint_names = ["j1", "j2", "j3", "j4", "j5", "j6"]
+    spec = traj.GetConfigurationSpecification()
+    time = 0
+    while time < traj.GetDuration():
+        trajdata = traj.Sample(time)
+        values = spec.ExtractJointValues(trajdata, robot,
+                                         robot.GetActiveManipulator().GetArmIndices(), 0)
+        pt = JointTrajectoryPoint()
+        pt.positions = values
+        pt.time_from_start = rospy.Duration(time)
+        ros_traj.points.append(pt)
+        time += 8e-3
+    return ros_traj
 
 
 def get_shaper(cmd):
@@ -83,7 +105,7 @@ def preview(data_dict):
     fig, axs = plt.subplots(2, 2, figsize=[5, 6], sharex=True)
     axs[0, 0].plot(t_arr, q_arr)
     axs[0, 0].set_title("(unshaped) Joint position")
-    axs[1, 0].plot(6.67e-3 * np.arange(q_shaped_arr.shape[0]), q_shaped_arr)
+    axs[1, 0].plot(8e-3 * np.arange(q_shaped_arr.shape[0]), q_shaped_arr)
     axs[1, 0].set_title("(shaped) Joint position")
     axs[0, 1].plot(t_arr, qd_arr)
     axs[0, 1].set_title("Joint velocity")
@@ -120,16 +142,91 @@ def convole_signal(x_arr, shaper, x_init):
     return x_arr_conv
 
 
-class TrajectoryController(object):
-    def __init__(self, robot, execute, dt=6.67e-3):
+class bCap_JointTrajectoryController(JointControllerBase):
+    def __init__(self, namespace, timeout):
+        super(bCap_JointTrajectoryController, self).__init__(namespace, timeout)
+        rospy.wait_for_service("/bcap/trajectory_server", timeout=5)
+        rospy.loginfo("Found motion server, preparing to call.")
+        self._service = rospy.ServiceProxy('/bcap/trajectory_server', ExecTrajectorybCap)
+
+    def set_trajectory(self, trajectory):
+        """ Store trajectory internally.
+        """
+        self._request = ExecTrajectorybCapRequest()
+        self._request.trajectory.joint_names = ["j1", "j2", "j3", "j4", "j5", "j6"]
+        self._request.trajectory = trajectory
+
+    def start(self, delay=0.1):
+        """ Send command to bCapServer.
+        """
+        rospy.sleep(delay)
+        rospy.loginfo("Send trajectory execution request to the RC8 controller")
+        response = self._service(self._request)
+        rospy.loginfo("Receive response: {:}".format(response))
+
+
+class TrajectoryRunner(object):
+    def __init__(self, robot, execute, dt=8e-3):
         self._execute = execute
         self._robot = robot
         self._dt = dt
-        if execute:
-            n = rospy.init_node("abc")
+        # 1: position-controller
+        if execute == 1:
             self._joint_controller = JointPositionController("denso")
+        # 2: trajectory-controller (via bCapServier)
+        elif execute == 2:
+            self._trajectory_controller = bCap_JointTrajectoryController("bcap", 2)
+        # 3: trajectory-controller (via denso_control/trajectory controller)
+        elif execute == 3:
+            self._trajectory_controller = JointTrajectoryController("denso")
 
     def execute_traj(self, q_arr):
+        if self._execute == 1:
+            return self.execute_traj_position(q_arr)
+        elif self._execute == 2:
+            return self.execute_traj_trajectory(q_arr)
+        elif self._execute == 3:
+            return self.execute_traj_trajectory(q_arr)
+        else:
+            return self.execute_traj_rave(q_arr)
+
+    def execute_traj_trajectory(self, q_arr):
+        """ Execute trajectory using a TrajectoryController.
+        """
+        q_current = self._trajectory_controller.get_joint_positions()
+        self._robot.SetActiveDOFValues(q_current)
+        traj0 = raveutils.planning.plan_to_joint_configuration(self._robot, q_arr[0])
+        traj0_ros = ros_traj_from_rave(self._robot, traj0)
+        traj1_ros = JointTrajectory()
+        for i, q in enumerate(q_arr):
+            pt = JointTrajectoryPoint()
+            pt.positions = q
+            pt.time_from_start = rospy.Duration(8e-3 * i)
+            traj1_ros.points.append(pt)
+
+        # execute trajectory
+        cmd = raw_input("Move to starting configuration y/[N]?  ")
+        if cmd != "y":
+            print("Does not execute anything. Exit.")
+            exit()
+        self._trajectory_controller.set_trajectory(traj0_ros)
+        self._trajectory_controller.start()
+        self._trajectory_controller.wait()
+        cmd = raw_input("Execute transport trajectory y/[N]?  ")
+        if cmd != "y":
+            print("Does not execute anything. Exit.")
+            exit()
+        self._trajectory_controller.set_trajectory(traj1_ros)
+        self._trajectory_controller.start()
+        self._trajectory_controller.wait()
+
+    def execute_traj_rave(self, q_arr):
+        rate = rospy.Rate(125)
+        for q in q_arr:
+            self._robot.SetDOFValues(q, range(6))
+            rate.sleep()
+
+    def execute_traj_position(self, q_arr):
         # Move to the starting conf
         cmd = raw_input("Move to starting configuration y/[N]?  ")
         if cmd != "y":
@@ -328,6 +425,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         Effect not well understood, do not used.
     """
     # setup
+    n = rospy.init_node("robust_experiment")
     if env is None:
         env = orpy.Environment()
         env.SetViewer('qtosg')
@@ -384,7 +482,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     pc_accel = toppra.constraint.JointAccelerationConstraint(alim)
     pc_accel.set_discretization_type(1)
 
-    traj_controller = TrajectoryController(robot, execute, dt=8e-3)
+    traj_controller = TrajectoryRunner(robot, execute, dt=8e-3)
 
     # setup toppra instance
     print("... {:d} path(s) loaded. start running experiment.")
@@ -516,6 +614,11 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
                  "profile_data": (data, gridpoints),
                  "shaped_trajectory": q_arr,
                  "problem_data": (transform, strategy, object_id, trajectory_id, slowdown)})
+
         # execute the trajectory
+        # set robot velocity and acceleration rate down, so that paths
+        # planned online are safe.
+        robot.SetDOFVelocityLimits(vlim_ * 0.3)
+        robot.SetDOFAccelerationLimits(alim_ * 0.3)
         traj_controller.execute_traj(q_arr)
     return True

@@ -1,15 +1,37 @@
-bigcup_analytical_rigid3:
-  id: bigcup_analytical_rigid3
+analytical_rigid:
   attached_to_manipulator: denso_suction_cup2
-  description: Contact stability constraint coefficients derived from an anlytical model of the suction cup. params--mu = 0.25, PA=18, N=6, r=10.5e-3
+  constraint_coeffs_file: analytical_rigid.npz
+  id: analytical_rigid
   orientation:
   - [1, 0, 0]
   - [0, 1, 0]
   - [0, 0, 1]
+  params: {N: 6, PA: 15.0, fmax: 16.666666666666668, mu: 0.25, r: 0.0105, simplify: false}
   position: [0, 0, 0]
-  constraint_coeffs_file: bigcup_analytical_rigid3.npz
+  description: No simplification.
 
+analytical_rigid123_b:
+  attached_to_manipulator: denso_suction_cup2
+  constraint_coeffs_file: analytical_rigid123_b.npz
+  id: analytical_rigid123_b
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  params: {N: 6, PA: 15.0, fmax: 16.666666666666668, mu: 0.25, r: 0.0105, simplify: true}
+  position: [0, 0, 0]
+  description: Wider samples generated.
 
+analytical_rigid123:
+  attached_to_manipulator: denso_suction_cup2
+  constraint_coeffs_file: analytical_rigid123.npz
+  id: analytical_rigid123
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  params: {N: 6, PA: 18.0, fmax: 16.666666666666668, mu: 0.3, r: 0.0125, simplify: true}
+  position: [0, 0, 0]
 
 bigcup_analytical_rigid2:
   id: bigcup_analytical_rigid2

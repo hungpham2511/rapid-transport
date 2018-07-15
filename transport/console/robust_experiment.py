@@ -83,13 +83,13 @@ def shape_trajectory(qs_unshaped, shaper):
 
 def preview(data_dict):
     q_shaped_arr = data_dict['shaped_trajectory']
-    transform, strategy, object_id, trajectory_id, slowdown = data_dict["problem_data"]
+    transform, strategy, object_id, trajectory_id, slowdown, contact_id = data_dict["problem_data"]
     data, gridpoints = data_dict["profile_data"]
     t_arr, q_arr, qd_arr, qdd_arr = data_dict["unshaped_trajectory"]
     # Plot profile
     transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
-    fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}".format(
-        strategy, object_id, transform_hash, trajectory_id, slowdown)
+    fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}-contact{5}".format(
+        strategy, object_id, transform_hash, trajectory_id, slowdown, contact_id)
     if data is not None:
         sdd_grid, sd_grid, v_grid, K = data
         fig = plt.figure()
@@ -604,6 +604,8 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         if fail:
             print("... Parameterization unsuccessful!")
             return False
+        else:
+            print("... Parameterization successful! Trajectory duration {:.3f} sec".format(ts[-1]))
 
         # Shape trajectory
         shaper = get_shaper("nil")
@@ -613,7 +615,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         preview({"unshaped_trajectory": (ts, qs, qds, qdds),
                  "profile_data": (data, gridpoints),
                  "shaped_trajectory": q_arr,
-                 "problem_data": (transform, strategy, object_id, trajectory_id, slowdown)})
+                 "problem_data": (transform, strategy, object_id, trajectory_id, slowdown, contact_id)})
 
         # execute the trajectory
         # set robot velocity and acceleration rate down, so that paths

@@ -19,6 +19,11 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
     com. This framme is defined as a relative transform from a parent
     frame `attached_name` and a relative transform `T_link_object`.
 
+    NOTE on SolidObject profiles in `objects.yaml`: A SolidObject
+    profile does not specify which link, or manipulator that the
+    object is attached to. This information must be supplied
+    separately during the initialization of a `SolidObject`
+
     Parameters
     ----------
     robot: openrave.Robot
@@ -34,12 +39,15 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         List of active indices. This parameter is deprecated. Now use the active DOFs of
         the robot by default.
     contact: Contact, optional
-        A contact object which contains information about the physical contact between this
-        object and the robot.
-    profile
+
+        A contact object which contains information about the physical
+        contact between this object and the robot.
+
+    profile_id
 
     """
-    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None, contact=None, profile_id="", name="", rave_model_path="", T_object_model=None):
+    def __init__(self, robot, attached_name, T_link_object, m, I_local, dofindices=None,
+                 contact=None, profile_id="", name="", rave_model_path="", T_object_model=None):
         super(SolidObject, self).__init__(robot, attached_name, T_link_object, dofindices)
         self.m = m
         self.g_world = np.r_[0, 0, -9.8]

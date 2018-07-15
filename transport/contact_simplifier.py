@@ -23,7 +23,9 @@ class ContactSimplifier(object):
     ----------
     robot: openravepy Robot
     contact: Contact
-        An input contact object that has a non-empty `raw_data` field or a `extreme` fields.
+        An input contact object that has a non-empty `raw_data` field
+        or a `extreme` fields.
+
     solid_object: SolidObject
     N_samples: int, optional
         Number of samples to generate from the object dynamics.
@@ -42,23 +44,34 @@ class ContactSimplifier(object):
         self._cover_vertices = cover_vertices
         # Generate or load the vertices `self._ws_all` and
         # the faces `self.F_local, self.g_local`.
-        assert len(contact.get_raw_data()) > 0, "There is no raw data to work with."
-        db = Database()
-        ws_list = []
-        logger.info("Loading raw data points.")
-        for file_name in self._contact.get_raw_data():
-            file_dir = os.path.join(db.get_contact_data_dir(), file_name)
-            ws_ = utils.load_data_ati_log(file_dir)
-            ws_list.append(ws_)
-            logger.info("file: {:} [Done]".format(file_name))
-        ws_all = np.vstack(ws_list)
-        logger.info("Scaling raw wrench data with factor = {:f}".format(scale))
-        w_mean = np.mean(ws_all, axis=0)
-        ws_all = w_mean + (ws_all - w_mean) * scale
-        self._ws_all = ws_all
+        if contact.get_raw_data() is not None:
+            logger.info("Input contact has raw data attached. Generate the base "
+                        "feasible set by loading data.")
+            db = Database()
+            ws_list = []
+            logger.info("Loading raw data points.")
+            for file_name in self._contact.get_raw_data():
+                file_dir = os.path.join(db.get_contact_data_dir(), file_name)
+                ws_ = utils.load_data_ati_log(file_dir)
+                ws_list.append(ws_)
+                logger.info("file: {:} [Done]".format(file_name))
+            ws_all = np.vstack(ws_list)
+            logger.info("Scaling raw wrench data with factor = {:f}".format(scale))
+            w_mean = np.mean(ws_all, axis=0)
+            ws_all = w_mean + (ws_all - w_mean) * scale
+            self._ws_all = ws_all
+        elif contact.raw_data_wrenches is not None:
+            logger.info("Found a collection of raw data wrenches. Use this for"
+                        " contact simplification.")
+            self._ws_all = np.array(contact.raw_data_wrenches)
+            assert self._ws_all.shape[1] == 6
+        else:
+            raise ValueError("The input contact must contains a non-None raw_data"
+                             " or raw_data_wrenches fields.")
+
         if self._verbose:
-            utils.preview_plot([[ws_all, 'x', {}]], dur=20)
-        hull_full = ConvexHull(ws_all)
+            utils.preview_plot([[self._ws_all, 'x', {}]], dur=20)
+        hull_full = ConvexHull(self._ws_all)
         F, g = hull_full.get_halfspaces()
         self._contact.F_local = F
         self._contact.g_local = g
@@ -77,8 +90,9 @@ class ContactSimplifier(object):
         perc = -1e-9  # current generation progress
         while len(ws_sample) < self._N_samples:
             trial += 1
-            qdd_sam, qd_sam = utils.sample_uniform(2, 0.5, 6)
             q_sam = utils.sample_uniform(1, 3, 6)[0]
+            qd_sam = utils.sample_uniform(1, 2, 6)[0]
+            qdd_sam = utils.sample_uniform(1, 20, 6)[0]
             T_world_contact = self._contact.compute_frame_transform(q_sam)
             w_sam = self._solid_object.compute_inverse_dyn(q_sam, qd_sam, qdd_sam, T_world_contact)
             if np.all(self._contact.F_local.dot(w_sam) - self._contact.g_local <= 0):

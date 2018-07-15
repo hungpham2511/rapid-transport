@@ -266,6 +266,7 @@ very_heavy_alum:
     - [0, 0, 1, 0.01]
     - [0, 0, 0, 1]
 
+# [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 9.0e-3], [0, 0, 0, 1]]
 
 heavy_alum_2:
   description: The heavy aluminium block, attached directly on the suction cup. The COM of the block is direclty below the cup itself.

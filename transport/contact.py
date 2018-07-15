@@ -17,11 +17,12 @@ class Contact(RaveRobotFixedFrame):
 
                F_{local} w_{contact} \leq g_{local}
 
-    This object directly corresponds to the contact profiles in
-    contacts.yaml. This is not true for object profiles in
-    objects.yaml. The key difference is that in the latter, the
-    profile does not specify which link, or manipulator that the
-    object is attached to.
+    A `Contact` object corresponds completely to a contact profile in
+    the database contacts.yaml. Note that this is not true for
+    `SolidObject` profiles in objects.yaml. The key difference is that
+    in the latter, the profile does not specify which link, or
+    manipulator that the object is attached to. This information must
+    be supplied separately during initialization of a `SolidObject`
 
     A contact can contain non-empty `raw_data` field. This contact is
     called raw. Often, a contact of this kind needs to be simplifed
@@ -42,16 +43,25 @@ class Contact(RaveRobotFixedFrame):
     dofindices: THIS IS DEPRECEATED
     profile_id: str
         Id of the profile that this contact is loaded from.
-    raw_data: list
-        A list of file names, each contains a raw data file obtained from the FT sensor.
+
+    raw_data: list of string, or array
+        A list of file names, each contains a raw data file obtained
+        from the FT sensor.
+        Or, a numpy array with shape (-1, 6).
 
     """
-    def __init__(self, robot, link_name, T_link_contact, F_local, g_local, dofindices=None, profile_id="", raw_data=[]):
+    def __init__(self, robot, link_name, T_link_contact, F_local, g_local,
+                 dofindices=None, profile_id="", raw_data=None):
         super(Contact, self).__init__(robot, link_name, T_link_contact, dofindices)
         self.F_local = F_local
         self.g_local = g_local
         self._profile_id = profile_id
-        self._raw_data = raw_data
+        if raw_data is not None:
+            if isinstance(raw_data[0], str):  # list of file name
+                self._raw_data = raw_data
+            else:  # numpy array of wrenches, shape (F, 6)
+                self.raw_data_wrenches = np.array(raw_data).reshape(-1, 6)
+                self._raw_data = None
 
     @staticmethod
     def init_from_profile_id(robot, profile_id):
@@ -76,7 +86,7 @@ class Contact(RaveRobotFixedFrame):
         try:
             raw_data = contact_profile['raw_data']
         except KeyError:
-            raw_data = []
+            raw_data = None
 
         T_link_contact = np.eye(4)
         T_link_contact[:3, 3] = contact_profile['position']

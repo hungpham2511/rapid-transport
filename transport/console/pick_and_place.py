@@ -289,6 +289,7 @@ class PickAndPlaceDemo(object):
         # 3. APPROACH: visit the same configuration as 1.
         # 4. TRANSPORT: visit the goal configuration.
         for obj_dict in self._scenario['objects']:
+            t0 = rospy.get_time()
             # Basic setup
             manip_name = obj_dict["object_attach_to"]
             manip = self.get_robot().SetActiveManipulator(manip_name)
@@ -303,14 +304,20 @@ class PickAndPlaceDemo(object):
                 T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
             q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
 
+            t1 = rospy.get_time()
             # 1. APPROACH
+            logger.info("Plan path to APPROACH")
             traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
+            t1a = rospy.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
 
             # 2. REACH: Move a "short" trajectory to reach the object
+            logger.info("Plan path to REACH")
+            t2 = rospy.get_time()
             traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
+            t2a = rospy.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
@@ -319,23 +326,9 @@ class PickAndPlaceDemo(object):
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
             time.sleep(0.3)
 
-            # # 3. APPROACH: Move back to a pose that is on top of the target transform
-            # traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
-            # traj0c_retimed = toppra.retime_active_joints_kinematics(
-            #     traj0c, self.get_robot(), amult=0.2, vmult=0.2)
-            # self.check_continue()
-            # fail = not self.execute_trajectory(traj0c_retimed)
-            # self.get_robot().WaitForController(0)
-
-            # # 4. TRANSPORT: Plan a trajectory to transport the object to reach the goal pose
-            # T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
-            # self.verify_transform(manip, T_ee_goal)
-            # q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
-            # traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=200, max_iters=100)
-            # if self.check_trajectory_collision(traj1_transport):
-            #     logger.fatal("There are collisions.")
-
             # 3+4: APPROACH+TRANSPORT: Plan two trajectories, merge them then retime
+            t3 = rospy.get_time()
+            logger.info("Plan path to GOAL")
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
             traj0c_waypoints, traj0c_ss = self.extract_waypoints(traj0c)
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
@@ -357,7 +350,7 @@ class PickAndPlaceDemo(object):
             traj2_rave.Init(spec)
             for p in traj2_waypoints:
                 traj2_rave.Insert(traj2_rave.GetNumWaypoints(), p)
-
+            t3a = rospy.get_time()
             planner = orpy.RaveCreatePlanner(self._env, "ParabolicSmoother")
             params = orpy.Planner.PlannerParameters()
             params.SetRobotActiveJoints(self._robot)
@@ -365,12 +358,15 @@ class PickAndPlaceDemo(object):
             params.SetPostProcessing('', '')
             success = planner.InitPlan(self._robot, params)
             status = planner.PlanPath(traj2_rave)
-            logger.info("[Plan Transport Path] Init status: {1:}, Plan status: {0:}".format(
-                status, success))
+            if not success or not status:
+                logger.fatal("[Plan Transport Path] Init status: {1:}, Plan status: {0:}. "
+                             "Use traj2_rave directly.".format(status, success))
+            t3b = rospy.get_time()
 
             # Retime the transport trajectory and execute it
-            logger.info("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
-            logger.info("Retime using toppra.")
+            logger.debug("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
+            logger.debug("Retime using toppra.")
+            t4 = rospy.get_time()
             contact = self.get_object(obj_dict['name']).get_contact()
             contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
@@ -378,20 +374,33 @@ class PickAndPlaceDemo(object):
             if traj2_retimed is None:
                 logger.error("Transport trajectory retime fails! Try again without contact constraints.")
                 traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self.get_robot(), additional_constraints=[])
+            t4a = rospy.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj2_retimed)
             self.get_robot().WaitForController(0)
 
             # release the object
+            logger.info("RELEASE object")
             self._robot.Release(self.get_env().GetKinBody(obj_dict['name']))
-            logger.info("Releasing the object. Robot stops for 0.5 secs")
+            logger.info("Time report"
+                        "\n - setup              :{0:f} secs"
+                        "\n - APPROACH plan      :{1:f} secs"
+                        "\n - APPROACH duration  :{6:f} secs"
+                        "\n - REACH plan         :{2:f} secs"
+                        "\n - REACH duration     :{7:f} secs"
+                        "\n - MOVE plan          :{3:f} secs"
+                        "\n - MOVE shortcut      :{4:f} secs"
+                        "\n - MOVE retime        :{5:f} secs"
+                        "\n - MOVE duration      :{8:f} secs".format(
+                            t1 - t0, t1a - t1, t2a - t2, t3a - t3, t3b - t3a, t4a - t4,
+                            traj0.GetDuration(), traj0b.GetDuration(),
+                            traj2_retimed.GetDuration()))
             time.sleep(0.5)
 
             # remove objects from environment
             T_cur = self.get_env().GetKinBody(obj_dict['name']).GetTransform()
             T_cur[2, 3] = 0.0
             self.get_env().GetKinBody(obj_dict['name']).SetTransform(T_cur)
-
 
         time.sleep(2)
         return not fail

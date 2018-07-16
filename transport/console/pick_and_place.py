@@ -254,39 +254,49 @@ class PickAndPlaceDemo(object):
         later is far too inefficient to be of any use. An even more
         critical issue with constrained rrt is that its path is too
         jerky, failing most smoothing attempts.
+
+        Args:
+            offset: (float, optional) Approach distance.
         """
         fail = False
-        # Start planning/control loop
-        for obj_d in self._scenario['objects']:
-            manip_name = obj_d["object_attach_to"]
+        # Start planning/control loop:
+        # Every pick cycle follows the same procedure:
+        # 1. APPROACH: visit a configuration that is directly on top of the object to pick
+        # 2. REACH:    move down to make contact w the object
+        # 3. APPROACH: visit the same configuration as 1.
+        # 4. TRANSPORT: visit the goal configuration.
+        for obj_dict in self._scenario['objects']:
+            # Basic setup
+            manip_name = obj_dict["object_attach_to"]
             manip = self.get_robot().SetActiveManipulator(manip_name)
-            # basemanip = orpy.interfaces.BaseManipulation(self.get_robot())
-            Tstart = np.array(obj_d['T_start'])  # object's transform
-            Tgoal = np.array(obj_d['T_goal'])
-            T_ee_start = np.dot(Tstart, self.get_object(obj_d['name']).get_T_object_link())
+            Tstart = np.array(obj_dict['T_start'])  # object's transform
+            Tgoal = np.array(obj_dict['T_goal'])
+            T_ee_start = np.dot(Tstart, self.get_object(obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_start)
             T_ee_top = np.array(T_ee_start)
-            T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
-
+            try:
+                T_ee_top[:3, 3] -= obj_dict['offset'] * T_ee_top[:3, 2]
+            except:
+                T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
             q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
 
-            # Visit a pose that is on top of the target transform.
+            # 1. APPROACH
             traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
             fail = not self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
 
-            # Move a "short" trajectory to reach the object
+            # 2. REACH: Move a "short" trajectory to reach the object
             traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
             self.check_continue()
             fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
             with self._env:
-                self._robot.Grab(self.get_env().GetKinBody(obj_d['name']))
+                self._robot.Grab(self.get_env().GetKinBody(obj_dict['name']))
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
             time.sleep(0.3)
 
-            # Move back to a pose that is on top of the target transform
+            # 3. APPROACH: Move back to a pose that is on top of the target transform
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             traj0c_retimed = toppra.retime_active_joints_kinematics(
                 traj0c, self.get_robot(), amult=0.2, vmult=0.2)
@@ -294,8 +304,8 @@ class PickAndPlaceDemo(object):
             fail = not self.execute_trajectory(traj0c_retimed)
             self.get_robot().WaitForController(0)
 
-            # Plan a trajectory to transport the object to reach the goal pose
-            T_ee_goal = np.dot(Tgoal, self.get_object(obj_d['name']).get_T_object_link())
+            # 4. TRANSPORT: Plan a trajectory to transport the object to reach the goal pose
+            T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_goal)
             q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
             traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=200, max_iters=100)
@@ -305,24 +315,26 @@ class PickAndPlaceDemo(object):
             # Retime the transport trajectory and execute it
             logger.info("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
             logger.info("Retime using toppra.")
-            contact = self.get_object(obj_d['name']).get_contact()
-            contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_d['name']))
+            contact = self.get_object(obj_dict['name']).get_contact()
+            contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
             traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[contact_constraint])
-            # traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[])
+            if traj1_retimed is None:
+                logger.error("Transport trajectory retime fails! Try again without contact constraints.")
+                traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[])
             self.check_continue()
             fail = not self.execute_trajectory(traj1_retimed)
             self.get_robot().WaitForController(0)
 
             # release the object
-            self._robot.Release(self.get_env().GetKinBody(obj_d['name']))
+            self._robot.Release(self.get_env().GetKinBody(obj_dict['name']))
             logger.info("Releasing the object. Robot stops for 0.5 secs")
             time.sleep(0.5)
 
             # remove objects from environment
-            T_cur = self.get_env().GetKinBody(obj_d['name']).GetTransform()
+            T_cur = self.get_env().GetKinBody(obj_dict['name']).GetTransform()
             T_cur[2, 3] = 0.0
-            self.get_env().GetKinBody(obj_d['name']).SetTransform(T_cur)
+            self.get_env().GetKinBody(obj_dict['name']).SetTransform(T_cur)
 
 
         time.sleep(2)

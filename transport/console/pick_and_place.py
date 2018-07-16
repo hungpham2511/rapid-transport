@@ -100,7 +100,7 @@ class PickAndPlaceDemo(object):
         A factor to slowdown execution. A value of 0.5 means slowdown to half computed speed.
         A value of 1.0 means execute at computed speed.
     """
-    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=1.0 / 150, slowdown=1.0):
+    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=8e-3, slowdown=1.0):
         assert load_path is not None, "A scenario must be supplied"
         self.verbose = verbose
         self.execute_hw = execute_hw
@@ -121,7 +121,7 @@ class PickAndPlaceDemo(object):
         else:
             self._env = env
             self._env.Reset()
-        self._env.SetDebugLevel(2)  # Less verbose debug
+        self._env.SetDebugLevel(3)  # Less verbose debug
         self._env.Load(_world_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
         self._robot.SetDOFVelocityLimits(self.slowdown * self._robot.GetDOFVelocityLimits())
@@ -220,6 +220,29 @@ class PickAndPlaceDemo(object):
             logger.fatal("Robot is in collision!")
         return in_collision
 
+    def extract_waypoints(self, trajectory):
+        """ Return the waypoints.
+        """
+        spec = trajectory.GetConfigurationSpecification()
+        waypoints = []
+        ss_waypoints = []
+        for i in range(trajectory.GetNumWaypoints()):
+            data = trajectory.GetWaypoint(i)
+            dt = spec.ExtractDeltaTime(data)
+            if dt > 1e-5 or len(waypoints) == 0:
+                if len(ss_waypoints) == 0:
+                    ss_waypoints.append(0)
+                else:
+                    ss_waypoints.append(ss_waypoints[-1] + dt)
+                q = spec.ExtractJointValues(data, self._robot, range(6), 0)
+                waypoints.append(q)
+        return np.array(waypoints), np.array(ss_waypoints)
+
+    def extract_ros_traj(self, trajectory):
+        """ Return a ROS trajectory from an OpenRAVE trajectory.
+        """
+        pass
+
     def execute_trajectory(self, trajectory):
         """ Execute the trajectory. 
         
@@ -296,21 +319,54 @@ class PickAndPlaceDemo(object):
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
             time.sleep(0.3)
 
-            # 3. APPROACH: Move back to a pose that is on top of the target transform
-            traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
-            traj0c_retimed = toppra.retime_active_joints_kinematics(
-                traj0c, self.get_robot(), amult=0.2, vmult=0.2)
-            self.check_continue()
-            fail = not self.execute_trajectory(traj0c_retimed)
-            self.get_robot().WaitForController(0)
+            # # 3. APPROACH: Move back to a pose that is on top of the target transform
+            # traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
+            # traj0c_retimed = toppra.retime_active_joints_kinematics(
+            #     traj0c, self.get_robot(), amult=0.2, vmult=0.2)
+            # self.check_continue()
+            # fail = not self.execute_trajectory(traj0c_retimed)
+            # self.get_robot().WaitForController(0)
 
-            # 4. TRANSPORT: Plan a trajectory to transport the object to reach the goal pose
+            # # 4. TRANSPORT: Plan a trajectory to transport the object to reach the goal pose
+            # T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
+            # self.verify_transform(manip, T_ee_goal)
+            # q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
+            # traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=200, max_iters=100)
+            # if self.check_trajectory_collision(traj1_transport):
+            #     logger.fatal("There are collisions.")
+
+            # 3+4: APPROACH+TRANSPORT: Plan two trajectories, merge them then retime
+            traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
+            traj0c_waypoints, traj0c_ss = self.extract_waypoints(traj0c)
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_goal)
             q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
-            traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=200, max_iters=100)
-            if self.check_trajectory_collision(traj1_transport):
-                logger.fatal("There are collisions.")
+            self._robot.SetActiveDOFValues(traj0c_waypoints[-1])
+            traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=1, max_iters=100)
+            self._robot.SetActiveDOFValues(traj0c_waypoints[0])
+            traj1_transport_waypoints, traj1_transport_ss = self.extract_waypoints(traj1_transport)
+            # concatenate
+            traj2_waypoints = np.vstack((traj0c_waypoints, traj1_transport_waypoints[1:]))
+
+            # create a new concatenated trajectory, then retime it.
+            traj2_ss = np.hstack((traj0c_ss, traj0c_ss[-1] + traj1_transport_ss[1:]))
+            traj2_ss[:] = traj2_ss / traj2_ss[-1]
+            
+            traj2_rave = orpy.RaveCreateTrajectory(self._env, "")
+            spec = self._robot.GetActiveConfigurationSpecification()
+            traj2_rave.Init(spec)
+            for p in traj2_waypoints:
+                traj2_rave.Insert(traj2_rave.GetNumWaypoints(), p)
+
+            planner = orpy.RaveCreatePlanner(self._env, "ParabolicSmoother")
+            params = orpy.Planner.PlannerParameters()
+            params.SetRobotActiveJoints(self._robot)
+            params.SetMaxIterations(100)
+            params.SetPostProcessing('', '')
+            success = planner.InitPlan(self._robot, params)
+            status = planner.PlanPath(traj2_rave)
+            logger.info("[Plan Transport Path] Init status: {1:}, Plan status: {0:}".format(
+                status, success))
 
             # Retime the transport trajectory and execute it
             logger.info("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
@@ -318,12 +374,12 @@ class PickAndPlaceDemo(object):
             contact = self.get_object(obj_dict['name']).get_contact()
             contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
-            traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[contact_constraint])
-            if traj1_retimed is None:
+            traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self._robot, additional_constraints=[contact_constraint])
+            if traj2_retimed is None:
                 logger.error("Transport trajectory retime fails! Try again without contact constraints.")
-                traj1_retimed = toppra.retime_active_joints_kinematics(traj1_transport, self.get_robot(), additional_constraints=[])
+                traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self.get_robot(), additional_constraints=[])
             self.check_continue()
-            fail = not self.execute_trajectory(traj1_retimed)
+            fail = not self.execute_trajectory(traj2_retimed)
             self.get_robot().WaitForController(0)
 
             # release the object

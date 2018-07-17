@@ -86,6 +86,8 @@ def preview(data_dict):
     transform, strategy, object_id, trajectory_id, slowdown, contact_id = data_dict["problem_data"]
     data, gridpoints = data_dict["profile_data"]
     t_arr, q_arr, qd_arr, qdd_arr = data_dict["unshaped_trajectory"]
+    vlim_, alim_ = data_dict["kin_limits"]
+
     # Plot profile
     transform_hash = hashlib.md5(str(np.array(transform * 10000, dtype=int))).hexdigest()[:5]
     fig_name = "obj_{1}_{2}-traj_{3}-slow_{4}-strat_{0}-contact{5}".format(
@@ -111,6 +113,14 @@ def preview(data_dict):
     axs[0, 1].set_title("Joint velocity")
     axs[1, 1].plot(t_arr, qdd_arr)
     axs[1, 1].set_title("Joint acceleration")
+
+    for i in range(6):
+        axs[1, 1].plot((t_arr[0], t_arr[-1]), [alim_[i], alim_[i]], '--', color="C" + str(i))
+        axs[1, 1].plot((t_arr[0], t_arr[-1]), [-alim_[i], -alim_[i]], '--', color="C" + str(i))
+
+        axs[0, 1].plot((t_arr[0], t_arr[-1]), [vlim_[i], vlim_[i]], '--', color="C" + str(i))
+        axs[0, 1].plot((t_arr[0], t_arr[-1]), [-vlim_[i], -vlim_[i]], '--', color="C" + str(i))
+
     fig.savefig(os.path.join(_tmp_dir, "{:}_trajectory.pdf".format(fig_name)))
     plt.show()
 
@@ -615,7 +625,9 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         preview({"unshaped_trajectory": (ts, qs, qds, qdds),
                  "profile_data": (data, gridpoints),
                  "shaped_trajectory": q_arr,
-                 "problem_data": (transform, strategy, object_id, trajectory_id, slowdown, contact_id)})
+                 "problem_data": (transform, strategy, object_id, trajectory_id, slowdown, contact_id),
+                 "kin_limits": (vlim_, alim_)
+        })
 
         # execute the trajectory
         # set robot velocity and acceleration rate down, so that paths

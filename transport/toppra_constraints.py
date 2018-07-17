@@ -4,6 +4,25 @@ import numpy as np
 
 
 class ObjectTransportationConstraint(CanonicalLinearConstraint):
+    """ Object transporation constraint.
+
+    Parameters
+    ----------
+    inv_dyn : func: (R^n, R^n, R^n) -> R^n
+        Inverse dynamic function.
+    cnst_F : array
+    cnst_g : array
+    dof : , optional
+        FIXME
+    discretization_scheme : , optional
+        FIXME
+
+    Returns
+    -------
+    out :
+        FIXME   
+    
+    """
     def __init__(self, inv_dyn, cnst_F, cnst_g, dof=None, discretization_scheme=1):
         super(ObjectTransportationConstraint, self).__init__()
         self.set_discretization_type(discretization_scheme)

@@ -156,9 +156,10 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         return wrench
 
     def compute_inverse_dyn(self, q, qd, qdd, T_world_frame, dofindices=None):
-        """ Net wrench the robot exerted on the object in frame {frame}.
+        """Net wrench the robot exerted on the object in frame {frame}.
 
-        {frame}'s transformation in the world frame {world} is given by T_world_frame.
+        {frame}'s transformation in the world frame {world} is given
+        by T_world_frame.
 
         Parameters
         ----------
@@ -172,6 +173,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         -------
         w: (6,)array
             (torque,force) wrench acting at {frame}'s origin.
+
         """
         T_world_body = self.compute_frame_transform(q, dofindices)
         T_body_frame = transform_inv(T_world_body).dot(T_world_frame)

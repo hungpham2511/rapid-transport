@@ -412,7 +412,7 @@ def gen_path(robot, seed, max_ppiters=60, max_iters=100):
         return path
 
 
-def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, safety=1.0):
+def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, solver, safety=1.0):
     """ Entry point to robust experiment.
 
     Parameters
@@ -480,7 +480,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
 
     # load constraints
     contact_constraint = create_object_transporation_constraint(contact, solid_object)
-    contact_constraint.set_discretization_type(0)
+    contact_constraint.set_discretization_type(1)
     print("... contact stability constraint formed")
 
     print contact_constraint
@@ -528,7 +528,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         # parameterization considering contact stability and kinematic constraints
         elif strategy == "w_contact":
             instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
-                                               gridpoints=gridpoints, solver_wrapper='hotqpOASES')
+                                               gridpoints=gridpoints, solver_wrapper=solver)
             traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
             if traj_ra is not None:
                 ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)

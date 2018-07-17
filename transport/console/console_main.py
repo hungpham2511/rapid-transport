@@ -58,6 +58,7 @@ def main():
 
     parser_rob.add_argument("-S", '--strategy', help="Parameterization strategy. "
                             "Can be `kin_only` or `w_contact`.", required=True)
+    parser_rob.add_argument("-l", "--solver", help="hotqoases or seidel", default='hotqpoases')
     parser_rob.add_argument('-v', '--verbose', help="Show additional messages.", action='store_true')
     parser_rob.add_argument('-d', "--slowdown", type=float, default=1.0)
     parser_rob.add_argument('-e', "--execute", help="If equals 1, send commands to JointPositionController. "
@@ -87,7 +88,7 @@ def main():
         robust_experiment.main(None, args.scene_path,
                                args.robot_name, args.contact_id, args.object_id,
                                args.attach, transform, args.trajectory_id, args.strategy,
-                               args.slowdown, args.execute, args.verbose, args.safety)
+                               args.slowdown, args.execute, args.verbose, args.solver, args.safety)
         
 
     return 1

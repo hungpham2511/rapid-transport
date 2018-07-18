@@ -412,8 +412,8 @@ def gen_path(robot, seed, max_ppiters=60, max_iters=100):
         return path
 
 
-def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, solver, safety=1.0):
-    """ Entry point to robust experiment.
+def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, trajectory_id, strategy, slowdown, execute, verbose, solver, alim_scale=1.0, vlim_scale=1.0, safety=1.0):
+    """Entry point to robust experiment.
 
     Parameters
     ----------
@@ -431,8 +431,16 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     slowdown : float
     execute : bool
     verbose : bool
+    solver : str
+    vlim_scale: float, optional
+        Scale the robot velocity limits accordingly.
+        vlim_ = vlim_ * kin_scale
+    alim_scale: float, optional
+        Scale the robot velocity limits accordingly.
+        alim_ = alim_ * kin_scale
     safety : float
         Effect not well understood, do not used.
+
     """
     # setup
     n = rospy.init_node("robust_experiment")
@@ -482,8 +490,12 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
     contact_constraint = create_object_transporation_constraint(contact, solid_object)
     contact_constraint.set_discretization_type(1)
     print("... contact stability constraint formed")
-
     print contact_constraint
+
+    # Set velocity/accel scaling
+    robot.SetDOFVelocityLimits(robot.GetDOFVelocityLimits() * vlim_scale)
+    robot.SetDOFAccelerationLimits(robot.GetDOFAccelerationLimits() * alim_scale)
+
     vlim_ = np.r_[robot.GetDOFVelocityLimits()]
     alim_ = np.r_[robot.GetDOFAccelerationLimits()]
     vlim = np.vstack((-vlim_, vlim_)).T
@@ -516,6 +528,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
             q_init = path.eval(0)
         # parametrize considering kinematics constraint only
         elif strategy == "kin_only":
+            t0 = rospy.get_time()
             instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel], path,
                                                gridpoints=gridpoints, solver_wrapper='hotqpOASES')
             traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
@@ -525,8 +538,10 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
             qdds = traj_ra.evaldd(ts) * slowdown ** 2
             q_init = traj_ra.eval(0)
             ts = ts / slowdown
+            t0a = rospy.get_time()
         # parameterization considering contact stability and kinematic constraints
         elif strategy == "w_contact":
+            t0 = rospy.get_time()
             instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
                                                gridpoints=gridpoints, solver_wrapper=solver)
             traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
@@ -540,6 +555,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
             else:
                 print("Parameterization fails!")
                 fail = True
+            t0a = rospy.get_time()
         # parameterization considering contact stability, kinematic constraints and jerk contraints
         elif strategy == "w_contact_jerk":
             instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel, contact_constraint], path,
@@ -615,7 +631,9 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
             print("... Parameterization unsuccessful!")
             return False
         else:
-            print("... Parameterization successful! Trajectory duration {:.3f} sec".format(ts[-1]))
+            print("... Parameterization successful! \n"
+                  ".... Trajectory duration         {:.3f} sec\n"
+                  ".... Total Parametrization time  {:.3f} sec" .format(ts[-1], t0a - t0))
 
         # Shape trajectory
         shaper = get_shaper("nil")

@@ -10,14 +10,14 @@ import argparse
 transport.utils.setup_logging("DEBUG")
 
 
-PA = 18.0  # (Newton) suction force
+PA = 22.0  # (Newton) suction force
 mu = 0.3  # coeff of friction
 r = 12.5e-3  # radius of the cup
 N = 6  # Number of points
 nvars = 3 * N + 3  # 3 comps for each contactforce and 3 for suction force
 alphas = [2 * np.pi * i / N for i in range(N)]  # angle of the contact points
 l = 0  # distance from {O}
-fmax = 100.0 / N  # Maximum allowable magnitude of individual contact forces
+fmax = 200.0 / N  # Maximum allowable magnitude of individual contact forces
 
 
 def main(simplify=False):
@@ -104,7 +104,7 @@ def main(simplify=False):
     ))
 
     # save coefficients
-    id_ = "analytical_rigid" + "123"
+    id_ = "analytical_rigid" + "1234"
     A, b = w0_hull.get_halfspaces()
     contact_profile = {id_: {
         "id": id_,

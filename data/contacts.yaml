@@ -1,3 +1,14 @@
+analytical_rigid1234:
+  attached_to_manipulator: denso_suction_cup2
+  constraint_coeffs_file: analytical_rigid1234.npz
+  id: analytical_rigid1234
+  orientation:
+  - [1, 0, 0]
+  - [0, 1, 0]
+  - [0, 0, 1]
+  params: {N: 6, PA: 20.0, fmax: 33.333333333333336, mu: 0.3, r: 0.0125, simplify: true}
+  position: [0, 0, 0]
+
 analytical_rigid:
   attached_to_manipulator: denso_suction_cup2
   constraint_coeffs_file: analytical_rigid.npz

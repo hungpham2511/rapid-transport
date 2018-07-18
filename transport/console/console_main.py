@@ -66,6 +66,9 @@ def main():
                             "Otherwise, only run with OpenRAVE",
                             default=0, type=int)
     parser_rob.add_argument('-y', "--safety", type=float, default=1.0)  # DEPRECATED
+
+    parser_rob.add_argument('-vs', "--vlim_scale", type=float, default=1.0)
+    parser_rob.add_argument('-as', "--alim_scale", type=float, default=1.0)
     ###########################################################################
     #                           Run approprate programs                       #
     ###########################################################################
@@ -88,7 +91,9 @@ def main():
         robust_experiment.main(None, args.scene_path,
                                args.robot_name, args.contact_id, args.object_id,
                                args.attach, transform, args.trajectory_id, args.strategy,
-                               args.slowdown, args.execute, args.verbose, args.solver, args.safety)
+                               args.slowdown, args.execute, args.verbose, args.solver,
+                               alim_scale=args.alim_scale, vlim_scale=args.vlim_scale,
+                               safety=args.safety)
         
 
     return 1

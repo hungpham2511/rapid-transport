@@ -2,6 +2,11 @@ from utils import compute_Jacobians, compute_Hessians, transform_inv
 import numpy as np
 
 
+def cross(a, b):     
+    return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]])
+
+
+
 class RaveRobotFixedFrame(object):
     """The base class for objects or frames attached to a link or a
     manipulator of an OpenRAVE robot.
@@ -81,8 +86,10 @@ class RaveRobotFixedFrame(object):
 
         omega = linkvel[3:]
         alpha = linkaccel[3:]
-        v = linkvel[:3] + np.cross(omega, vtranslinkframe)
-        a = linkaccel[:3] + np.cross(alpha, vtranslinkframe) + np.cross(omega, np.cross(omega, vtranslinkframe))
+
+        v = linkvel[:3] + cross(omega, vtranslinkframe)
+        a = linkaccel[:3] + cross(alpha, vtranslinkframe) + cross(omega, cross(omega, vtranslinkframe))
+
         return a, v, alpha, omega
 
     def compute_kinematics_local(self, q, qd, qdd, dofindices=None):

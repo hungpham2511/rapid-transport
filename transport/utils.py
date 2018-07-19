@@ -196,7 +196,10 @@ def skew(p):
 
 
 def transform_inv(T):
-    return np.linalg.inv(T)
+    T_inv = np.array(T)
+    T_inv[:3, :3] = T[:3, :3].T
+    T_inv[:3, 3] = - T[:3, :3].T.dot(T[:3, 3])
+    return T_inv
 
 
 def Ad(T):

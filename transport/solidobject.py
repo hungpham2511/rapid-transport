@@ -1,4 +1,4 @@
-from .rave_fixed_frame import RaveRobotFixedFrame
+from .rave_fixed_frame import RaveRobotFixedFrame, cross
 from .articulatedbody import ArticulatedBody
 from .profile_loading import Database
 from .contact import Contact
@@ -151,7 +151,7 @@ class SolidObject(RaveRobotFixedFrame, ArticulatedBody):
         R_world_body = self.compute_frame_transform(q, dofindices)[:3, :3]
         g_body = R_world_body.T.dot(self.g_world)
         wrench = np.zeros(6)
-        wrench[:3] = self.I_local.dot(alpha) + np.cross(omega, self.I_local.dot(omega))
+        wrench[:3] = self.I_local.dot(alpha) + cross(omega, self.I_local.dot(omega))
         wrench[3:] = self.m * a - self.m * g_body
         return wrench
 

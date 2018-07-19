@@ -97,7 +97,7 @@ class Contact(RaveRobotFixedFrame):
     def clone(self):
         """ Return a cloned contact object.
         """
-        return Contact(self.robot, self._attached_name, self.T_link_contact,
+        return Contact(self.robot, self._link.GetName(), self._T_link_frame,
                        self.F_local, self.g_local, profile_id=self._profile_id)
 
     def get_raw_data(self):

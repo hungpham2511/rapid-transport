@@ -3,35 +3,31 @@ import numpy as np
 
 
 class RaveRobotFixedFrame(object):
-    """ Base class for objects that attached to a link of the robot.
+    """The base class for objects or frames attached to a link or a
+    manipulator of an OpenRAVE robot.
 
     Parameters
     ----------
     robot: openravepy.Robot
     attached_name: str
-        Name of an manipulator, or a link on the robot.
+        Name of a manipulator or a link.
     T_attached_frame: array
-        Transform from the local frame of attached to the object frame.
+        Transform from the local frame of the attached link/manipulator to frame.
     dofindices: int list, optional
         List of joint indices. If None select all joints.
     """
-
     def __init__(self, robot, attached_name, T_attached_frame, dofindices=None):
         self.robot = robot
         link = robot.GetLink(attached_name)
-        manip = robot.GetManipulator(attached_name)
-        if link is None and manip is not None:
-            self._attached_name = manip.GetEndEffector().GetName()
-            T_world_ee = manip.GetTransform()
-            T_world_frame = T_world_ee.dot(T_attached_frame)
-            T_world_link = manip.GetEndEffector().GetTransform()
-            self.T_link_contact = transform_inv(T_world_link).dot(T_world_frame)
-        elif link is not None and manip is None:
-            self._attached_name = attached_name
-            self.T_link_contact = T_attached_frame
+        if link is not None:
+            self._link = link
+            self._T_link_frame = np.array(T_attached_frame)
         else:
-            raise ValueError, "[{:}] is not a link name or manipulator name.".format(attached_name)
-
+            manip = robot.GetManipulator(attached_name)
+            if manip is None:
+                raise ValueError("Unable to find link or manipulator: {:}".format(attached_name))
+            self._link = manip.GetEndEffector()
+            self._T_link_frame = np.dot(manip.GetLocalToolTransform(), T_attached_frame)
         self.dofindices = dofindices
 
     def compute_frame_transform(self, q, dofindices=None):
@@ -55,10 +51,9 @@ class RaveRobotFixedFrame(object):
             dofindices = self.dofindices
         with self.robot:
             self.robot.SetActiveDOFValues(q)
-            link = self.robot.GetLink(self._attached_name)
-            T_world_link = link.GetTransform()
-            T_world_contact = T_world_link.dot(self.T_link_contact)
-        return T_world_contact
+            T_world_link = self._link.GetTransform()
+            T_world_frame = T_world_link.dot(self._T_link_frame)
+        return T_world_frame
 
     def compute_kinematics_global(self, q, qd, qdd, dofindices=None):
         """ Return the kinematic quantities in the world frame.
@@ -76,15 +71,18 @@ class RaveRobotFixedFrame(object):
         """
         if dofindices is None:
             dofindices = self.dofindices
-        p_endlink = self.T_link_contact[:3, 3]
-        J_rot, J_tran = compute_Jacobians(self.robot, self._attached_name, q_cur=q, pos_endlink=p_endlink)
-        H_rot, H_tran = compute_Hessians(self.robot, self._attached_name, q_cur=q, pos_endlink=p_endlink)
+        self.robot.SetActiveDOFValues(q)
+        self.robot.SetActiveDOFVelocities(qd)
+        linkvel = self.robot.GetLinkVelocities()[self._link.GetIndex()]
+        qdd_full = np.zeros(self.robot.GetDOF())
+        qdd_full[:qdd.shape[0]] = qdd
+        linkaccel = self.robot.GetLinkAccelerations(qdd_full)[self._link.GetIndex()]
+        vtranslinkframe = self._link.GetTransform()[:3, :3].dot(self._T_link_frame[:3, 3])
 
-        v = J_tran.dot(qd)
-        a = J_tran.dot(qdd) + np.dot(qd, np.dot(H_tran, qd))
-        omega = J_rot.dot(qd)
-        alpha = J_rot.dot(qdd) + np.dot(qd, np.dot(H_rot, qd))
-
+        omega = linkvel[3:]
+        alpha = linkaccel[3:]
+        v = linkvel[:3] + np.cross(omega, vtranslinkframe)
+        a = linkaccel[:3] + np.cross(alpha, vtranslinkframe) + np.cross(omega, np.cross(omega, vtranslinkframe))
         return a, v, alpha, omega
 
     def compute_kinematics_local(self, q, qd, qdd, dofindices=None):

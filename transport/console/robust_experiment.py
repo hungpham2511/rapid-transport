@@ -533,7 +533,7 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
         elif strategy == "kin_only":
             t0 = rospy.get_time()
             instance = toppra.algorithm.TOPPRA([pc_velocity, pc_accel], path,
-                                               gridpoints=gridpoints, solver_wrapper='hotqpOASES')
+                                               gridpoints=gridpoints, solver_wrapper=solver)
             traj_ra, aux_traj, data = instance.compute_trajectory(0, 0, return_profile=True)
             ts = np.arange(0, traj_ra.get_duration(), dt * slowdown)
             qs = traj_ra.eval(ts)

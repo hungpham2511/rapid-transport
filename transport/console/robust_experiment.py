@@ -443,7 +443,10 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
 
     """
     # setup
-    n = rospy.init_node("robust_experiment")
+    try:
+        n = rospy.init_node("robust_experiment")
+    except rospy.ROSException as e:
+        print e
     if env is None:
         env = orpy.Environment()
         env.SetViewer('qtosg')

@@ -27,6 +27,9 @@ import cvxpy as cvx
 
 _tmp_dir = "/home/hung/.temp.toppra/"
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def ros_traj_from_rave(robot, traj):
     ros_traj = JointTrajectory()
@@ -189,8 +192,17 @@ class TrajectoryRunner(object):
         # 3: trajectory-controller (via denso_control/trajectory controller)
         elif execute == 3:
             self._trajectory_controller = JointTrajectoryController("denso")
+        else:
+            logger.info("No hardware controller loaded.")
 
     def execute_traj(self, q_arr):
+        """ The entry point of this controller.
+
+        Parameters
+        ----------
+        q_arr: array
+            Waypoints to send to the robots.
+        """
         if self._execute == 1:
             return self.execute_traj_position(q_arr)
         elif self._execute == 2:
@@ -201,7 +213,7 @@ class TrajectoryRunner(object):
             return self.execute_traj_rave(q_arr)
 
     def execute_traj_trajectory(self, q_arr):
-        """ Execute trajectory using a TrajectoryController.
+        """ Execute trajectory using the stored trajectory controller.
         """
         q_current = self._trajectory_controller.get_joint_positions()
         self._robot.SetActiveDOFValues(q_current)
@@ -237,6 +249,9 @@ class TrajectoryRunner(object):
             rate.sleep()
 
     def execute_traj_position(self, q_arr):
+        """Execute a trajectory using the JointPositioncontroller.
+
+        """
         # Move to the starting conf
         cmd = raw_input("Move to starting configuration y/[N]?  ")
         if cmd != "y":

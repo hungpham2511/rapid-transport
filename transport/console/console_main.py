@@ -23,9 +23,12 @@ def main():
                              default="scenarios/test0.scenario.yaml")
     parser_pick.add_argument('-v', dest='verbose', action='store_true')
     parser_pick.add_argument('-d', "--slowdown", type=float, default=0.5)
-    parser_pick.add_argument('-e', "--execute_hw", help="If True, send commands to real hardware.",
-                             action="store_true", default=False)
-
+    parser_pick.add_argument('-e', "--execute",
+                             help="If equals 1, send commands to JointPositionController. "
+                             "If equals 2, send commands to JointTrajectoryController. "
+                             "Otherwise, only run with OpenRAVE",
+                             default=0, type=int)
+    
     ###########################################################################
     #                        Simplify contact subparser demo                  #
     ###########################################################################
@@ -75,7 +78,9 @@ def main():
 
     args = parser.parse_args()
     if args.which == "pick-demo":
-        pick_and_place.main(load_path=args.scene, verbose=args.verbose, execute_hw=args.execute_hw, slowdown=args.slowdown)
+        pick_and_place.main(load_path=args.scene, verbose=args.verbose,
+                            execute=args.execute, slowdown=args.slowdown)
+
     elif args.which == "simplify-contact":
         simplify_contact.main(
             contact_id=args.contact,

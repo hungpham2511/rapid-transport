@@ -9,6 +9,7 @@ try:
     import raveutils
     import rospy
     from denso_control.controllers import JointPositionController
+    from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 except ImportError:
     pass
 
@@ -16,8 +17,10 @@ from ..utils import expand_and_join, setup_logging
 from ..profile_loading import Database
 from ..solidobject import SolidObject
 from ..toppra_constraints import create_object_transporation_constraint
+from .robust_experiment import TrajectoryRunner
 
 logger = logging.getLogger(__name__)
+SOLVER = 'seidel'
 
 
 def main(*args, **kwargs):
@@ -83,7 +86,7 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
 
 
 class PickAndPlaceDemo(object):
-    """ A pick-and-place demo.
+    """A pick-and-place demo.
 
     Parameters
     ----------
@@ -92,18 +95,25 @@ class PickAndPlaceDemo(object):
     env: optional
         OpenRAVE Environment. If env is None, create a new environment.
     verbose: bool, optional
-    execute_hw: bool, optional
-        Send trajectory to real robot.
+    execute: int, optional
+        If equals 0, only run the trajectories in openrave simulation.
+        If equals 3, send to the real hardware using JointTrajectoryController .
+
     dt: float, optional
         Control sampling time in sending commands to the robots.
     slowdown: float, optional
-        A factor to slowdown execution. A value of 0.5 means slowdown to half computed speed.
+
+        A factor to slowdown execution. A value of 0.5 means slowing
+        down the final trajectory uniformly so that the old duration
+        equals 0.5 times the new duration..
+
         A value of 1.0 means execute at computed speed.
+
     """
-    def __init__(self, load_path=None, env=None, verbose=False, execute_hw=False, dt=8e-3, slowdown=1.0):
+    def __init__(self, load_path=None, env=None, verbose=False, execute=0, dt=8e-3, slowdown=1.0):
         assert load_path is not None, "A scenario must be supplied"
         self.verbose = verbose
-        self.execute_hw = execute_hw
+        self.execute = execute
         self.slowdown = slowdown
         if self.verbose:
             setup_logging(level="DEBUG")
@@ -128,9 +138,14 @@ class PickAndPlaceDemo(object):
         self._robot.SetDOFAccelerationLimits(self.slowdown * self._robot.GetDOFAccelerationLimits())
         self._objects = []
         n = rospy.init_node("pick_and_place_planner")
-        if self.execute_hw:
-            self.joint_controller = JointPositionController('denso')
-            self._robot.SetActiveDOFValues(self.joint_controller.get_joint_positions())
+        self._traj_controller = TrajectoryRunner(self._robot, self.execute)
+        if self.execute == 0:
+            logger.info("Only run in OpenRAVE.")
+        elif self.execute == 3:
+            logger.info("Be CAREFUL! Will send command to the real Denso!")
+        else:
+            logger.error("Other EXECUTE mode not supported.")
+
         self._dt = dt
         # Load all objects to openRave
         for obj_d in self._scenario['objects']:
@@ -244,26 +259,36 @@ class PickAndPlaceDemo(object):
         pass
 
     def execute_trajectory(self, trajectory):
-        """ Execute the trajectory. 
-        
-        If execute_hw is true, also publish command message to ROS.
+        """ Execute trajectory on the robot hardware.
+
+        If execute is 3 publish data and send to the robot.
+
+        Parameters
+        ----------
+        trajectory: OpenRAVE.trajectory
+
         """
         if trajectory is None:
             return False
-        spec = trajectory.GetConfigurationSpecification()
-        duration = trajectory.GetDuration()
-        for t in np.arange(0, duration, self._dt):
-            t_start = rospy.get_time()
-            data = trajectory.Sample(t)
-            q = spec.ExtractJointValues(data, self._robot, range(6), 0)
-            if self.execute_hw:
-                self.joint_controller.set_joint_positions(q)
-            self.get_robot().SetDOFValues(q)
-            self.get_env().UpdatePublishedBodies()
-            t_elasped = rospy.get_time() - t_start
-            logger.debug("Extraction cost per loop {:f} / {:f}".format(t_elasped, self._dt))
-            rospy.sleep(self._dt - t_elasped)
-        return True
+
+        if self.execute == 0:
+            self._robot.GetController().SetPath(trajectory)
+            self._robot.WaitForController(0)
+            return True
+
+        elif self.execute == 3:
+            spec = trajectory.GetConfigurationSpecification()
+            trajectory_ros = JointTrajectory()
+            duration = trajectory.GetDuration()
+            for t in np.arange(0, duration, self._dt):
+                data = trajectory.Sample(t)
+                q = spec.ExtractJointValues(data, self._robot, range(6), 0)
+                pt = JointTrajectoryPoint()
+                pt.positions = q
+                pt.time_from_start = t
+                trajectory_ros.points.append(pt)
+
+            return True
 
     def run(self, offset=0.01):
         """Run the demo.
@@ -326,22 +351,27 @@ class PickAndPlaceDemo(object):
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
             time.sleep(0.3)
 
-            # 3+4: APPROACH+TRANSPORT: Plan two trajectories, merge them then retime
+            # 3+4: APPROACH+TRANSPORT: Plan two trajectories, one
+            # trajectory to reach the REACH position, another
+            # trajectory to reach the GOAL position. Merge them, then
+            # execute.
             t3 = rospy.get_time()
             logger.info("Plan path to GOAL")
+            ## 1st trajectory
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
             traj0c_waypoints, traj0c_ss = self.extract_waypoints(traj0c)
             T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_goal)
             q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
+            ## 2nd trajectory
             self._robot.SetActiveDOFValues(traj0c_waypoints[-1])
             traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=1, max_iters=100)
             self._robot.SetActiveDOFValues(traj0c_waypoints[0])
             traj1_transport_waypoints, traj1_transport_ss = self.extract_waypoints(traj1_transport)
-            # concatenate
+            ## concatenate the two trajectories
             traj2_waypoints = np.vstack((traj0c_waypoints, traj1_transport_waypoints[1:]))
 
-            # create a new concatenated trajectory, then retime it.
+            ## retime
             traj2_ss = np.hstack((traj0c_ss, traj0c_ss[-1] + traj1_transport_ss[1:]))
             traj2_ss[:] = traj2_ss / traj2_ss[-1]
             
@@ -370,11 +400,13 @@ class PickAndPlaceDemo(object):
             contact = self.get_object(obj_dict['name']).get_contact()
             contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
-            traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self._robot, additional_constraints=[contact_constraint])
+            traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self._robot, additional_constraints=[contact_constraint], solver_wrapper=SOLVER, vmult=0.999, amult=0.999)
+
             if traj2_retimed is None:
                 logger.error("Transport trajectory retime fails! Try again without contact constraints.")
                 traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self.get_robot(), additional_constraints=[])
             t4a = rospy.get_time()
+
             self.check_continue()
             fail = not self.execute_trajectory(traj2_retimed)
             self.get_robot().WaitForController(0)
@@ -391,10 +423,11 @@ class PickAndPlaceDemo(object):
                         "\n - MOVE plan          :{3:f} secs"
                         "\n - MOVE shortcut      :{4:f} secs"
                         "\n - MOVE retime        :{5:f} secs"
-                        "\n - MOVE duration      :{8:f} secs".format(
+                        "\n - MOVE duration      :{8:f} secs"
+                        "\n - TOTAL duration     :{9:f} secs".format(
                             t1 - t0, t1a - t1, t2a - t2, t3a - t3, t3b - t3a, t4a - t4,
                             traj0.GetDuration(), traj0b.GetDuration(),
-                            traj2_retimed.GetDuration()))
+                            traj2_retimed.GetDuration(), t4a - t0))
             time.sleep(0.5)
 
             # remove objects from environment

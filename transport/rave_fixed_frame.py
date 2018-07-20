@@ -76,24 +76,25 @@ class RaveRobotFixedFrame(object):
         """
         if dofindices is None:
             dofindices = self.dofindices
-        self.robot.SetActiveDOFValues(q)
-        vlim_ = self.robot.GetDOFVelocityLimits()
+        with self.robot:
+            self.robot.SetActiveDOFValues(q)
+            vlim_ = self.robot.GetDOFVelocityLimits()
 
-        self.robot.SetDOFVelocityLimits(vlim_ * 1000)  # remove velocity limits to compute stuffs
-        self.robot.SetActiveDOFVelocities(qd)
-        linkvel = self.robot.GetLinkVelocities()[self._link.GetIndex()]
-        qdd_full = np.zeros(self.robot.GetDOF())
-        qdd_full[:qdd.shape[0]] = qdd
-        linkaccel = self.robot.GetLinkAccelerations(qdd_full)[self._link.GetIndex()]
-        vtranslinkframe = self._link.GetTransform()[:3, :3].dot(self._T_link_frame[:3, 3])
+            self.robot.SetDOFVelocityLimits(vlim_ * 1000)  # remove velocity limits to compute stuffs
+            self.robot.SetActiveDOFVelocities(qd)
+            linkvel = self.robot.GetLinkVelocities()[self._link.GetIndex()]
+            qdd_full = np.zeros(self.robot.GetDOF())
+            qdd_full[:qdd.shape[0]] = qdd
+            linkaccel = self.robot.GetLinkAccelerations(qdd_full)[self._link.GetIndex()]
+            vtranslinkframe = self._link.GetTransform()[:3, :3].dot(self._T_link_frame[:3, 3])
 
-        omega = linkvel[3:]
-        alpha = linkaccel[3:]
+            omega = linkvel[3:]
+            alpha = linkaccel[3:]
 
-        v = linkvel[:3] + cross(omega, vtranslinkframe)
-        a = linkaccel[:3] + cross(alpha, vtranslinkframe) + cross(omega, cross(omega, vtranslinkframe))
+            v = linkvel[:3] + cross(omega, vtranslinkframe)
+            a = linkaccel[:3] + cross(alpha, vtranslinkframe) + cross(omega, cross(omega, vtranslinkframe))
 
-        self.robot.SetDOFVelocityLimits(vlim_)
+            self.robot.SetDOFVelocityLimits(vlim_)
         return a, v, alpha, omega
 
     def compute_kinematics_local(self, q, qd, qdd, dofindices=None):

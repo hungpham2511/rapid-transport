@@ -8,7 +8,7 @@ import logging
 try:
     import raveutils
     import rospy
-    from denso_control.controllers import JointPositionController
+    from denso_control.controllers import JointPositionController, JointTrajectoryController
     from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 except ImportError:
     pass
@@ -17,7 +17,6 @@ from ..utils import expand_and_join, setup_logging
 from ..profile_loading import Database
 from ..solidobject import SolidObject
 from ..toppra_constraints import create_object_transporation_constraint
-from .robust_experiment import TrajectoryRunner
 
 logger = logging.getLogger(__name__)
 SOLVER = 'seidel'
@@ -138,11 +137,12 @@ class PickAndPlaceDemo(object):
         self._robot.SetDOFAccelerationLimits(self.slowdown * self._robot.GetDOFAccelerationLimits())
         self._objects = []
         n = rospy.init_node("pick_and_place_planner")
-        self._traj_controller = TrajectoryRunner(self._robot, self.execute)
         if self.execute == 0:
             logger.info("Only run in OpenRAVE.")
         elif self.execute == 3:
             logger.info("Be CAREFUL! Will send command to the real Denso!")
+            self._trajectory_controller = JointTrajectoryController("denso")
+            self._robot.SetActiveDOFValues(self._trajectory_controller.get_joint_positions())
         else:
             logger.error("Other EXECUTE mode not supported.")
 
@@ -236,7 +236,11 @@ class PickAndPlaceDemo(object):
         return in_collision
 
     def extract_waypoints(self, trajectory):
-        """ Return the waypoints.
+        """ Extract waypoints from an OpenRAVE trajectory.
+
+        Parameters
+        ----------
+        trajectory: OpenRAVE.Trajectory
         """
         spec = trajectory.GetConfigurationSpecification()
         waypoints = []
@@ -285,8 +289,14 @@ class PickAndPlaceDemo(object):
                 q = spec.ExtractJointValues(data, self._robot, range(6), 0)
                 pt = JointTrajectoryPoint()
                 pt.positions = q
-                pt.time_from_start = t
+                pt.time_from_start = rospy.Duration(t)
                 trajectory_ros.points.append(pt)
+            self._trajectory_controller.set_trajectory(trajectory_ros)
+            self._trajectory_controller.start()
+            self._robot.GetController().SetPath(trajectory)
+
+            self._robot.WaitForController(0)
+            self._trajectory_controller.wait()
 
             return True
 

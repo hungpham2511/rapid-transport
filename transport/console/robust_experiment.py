@@ -243,6 +243,8 @@ class TrajectoryRunner(object):
         self._trajectory_controller.wait()
 
     def execute_traj_rave(self, q_arr):
+        self._robot.SetDOFValues(q_arr[0], range(6))
+        cmd = raw_input("[Enter] to execute path")
         rate = rospy.Rate(125)
         for q in q_arr:
             self._robot.SetDOFValues(q, range(6))

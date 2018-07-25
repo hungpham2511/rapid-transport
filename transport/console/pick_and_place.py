@@ -359,7 +359,6 @@ class PickAndPlaceDemo(object):
             with self._env:
                 self._robot.Grab(self.get_env().GetKinBody(obj_dict['name']))
             logger.info("Grabbing the object. Continue moving in 0.3 sec.")
-            time.sleep(0.3)
 
             # 3+4: APPROACH+TRANSPORT: Plan two trajectories, one
             # trajectory to reach the REACH position, another
@@ -424,6 +423,7 @@ class PickAndPlaceDemo(object):
             # release the object
             logger.info("RELEASE object")
             self._robot.Release(self.get_env().GetKinBody(obj_dict['name']))
+            t4b = rospy.get_time()
             logger.info("Time report"
                         "\n - setup              :{0:f} secs"
                         "\n - APPROACH plan      :{1:f} secs"
@@ -437,8 +437,7 @@ class PickAndPlaceDemo(object):
                         "\n - TOTAL duration     :{9:f} secs".format(
                             t1 - t0, t1a - t1, t2a - t2, t3a - t3, t3b - t3a, t4a - t4,
                             traj0.GetDuration(), traj0b.GetDuration(),
-                            traj2_retimed.GetDuration(), t4a - t0))
-            time.sleep(0.5)
+                            traj2_retimed.GetDuration(), t4b - t0))
 
             # remove objects from environment
             T_cur = self.get_env().GetKinBody(obj_dict['name']).GetTransform()

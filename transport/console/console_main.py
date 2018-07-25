@@ -64,8 +64,9 @@ def main():
     parser_rob.add_argument("-l", "--solver", help="hotqoases or seidel", default='hotqpoases')
     parser_rob.add_argument('-v', '--verbose', help="Show additional messages.", action='store_true')
     parser_rob.add_argument('-d', "--slowdown", type=float, default=1.0)
-    parser_rob.add_argument('-e', "--execute", help="If equals 1, send commands to JointPositionController. "
-                            "If equals 2, send commands to JointTrajectoryController. "
+    parser_rob.add_argument('-e', "--execute", help="If equals 1, send commands to JointPositionController.\n"
+                            "If equals 2, send commands to (bCap) JointTrajectoryController.\n"
+                            "If equals 3, send commands to (denso.control) JointTrajectoryController.\n"
                             "Otherwise, only run with OpenRAVE",
                             default=0, type=int)
     parser_rob.add_argument('-y', "--safety", type=float, default=1.0)  # DEPRECATED

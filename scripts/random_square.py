@@ -63,19 +63,22 @@ def main():
     ws_sample = np.random.randn(20, 2) * 0.3 + np.r_[0.5, 0.5]
     ws_all = np.vstack((ws_all, ws_sample))
     # Solve for ws_all
-    simp_vertices = gpe_2d(ws_all, ws_sample, 10)
+    Y_iters = gpe_2d(ws_all, ws_sample, 10)
 
     fig = plt.figure(figsize=[3.5, 3.5])
     for i in range(4):
-        simp_samples = simp_vertices[i]
+        Yi = Y_iters[i]
         ax = fig.add_subplot(2, 2, i + 1)
         ax.set_xticks([])
         ax.set_yticks([])
         # ax.plot([0, 1, 1, 0], [0, 0, 1, 1], c='gray')
         ax.scatter(ws_all[:, 0], ws_all[:, 1], c='gray', s=10, marker='x')
         ax.scatter(ws_sample[:, 0], ws_sample[:, 1], c='red', s=10)
-        simp_samples_data = get_convexhull_data_2d(simp_samples)
-        ax.plot(simp_samples_data[:, 0], simp_samples_data[:, 1], '-^', c='green', markersize=5, lw=2)
+        Yi_bnd = get_convexhull_data_2d(Yi)
+        Ws_bnd = get_convexhull_data_2d(ws_all)
+        ax.plot(Yi_bnd[:, 0], Yi_bnd[:, 1], '-^', c='green', markersize=5, lw=2)
+        ax.plot(Ws_bnd[:, 0], Ws_bnd[:, 1], '--', c='gray', lw=1)
+
     plt.tight_layout()
     plt.savefig("gpe.pdf")
     plt.show()

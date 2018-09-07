@@ -1,0 +1,89 @@
+world_xml_dir: pick-exp1.env.xml
+robot:  denso
+    
+# Define object to transport
+objects:
+
+  - name: object3
+    object_profile: westone
+    object_attach_to: denso_suction_cup2
+    contact_profile: analytical_rigid123
+    T_link_object:
+      - [0, -1, 0, 0e-3]
+      - [-1, 0, 0, 0]
+      - [0, 0, -1, 28.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0, -1, 0, 0.551]
+      - [1, 0, 0, -0.357]
+      - [0, 0, 1, 0.115]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [0, -1, 0, 0.515]
+      - [1, 0, 0, +0.41]
+      - [0, 0, 1, 0.06]
+      - [0, 0, 0, 0]
+    offset: 0.20
+
+  - name: object1
+    object_profile: kindlebox_light
+    object_attach_to: denso_suction_cup2
+    contact_profile: analytical_rigid123
+    T_link_object:
+      - [0, -1, 0, 0e-3]
+      - [-1, 0, 0, 0]
+      - [0, 0, -1, 25.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0, -1, 0, 0.535]
+      - [1, 0, 0, -0.337]
+      - [0, 0, 1, 0.061]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [-1, 0, 0, 0.36]
+      - [0, -1, 0, +0.4]
+      - [0, 0, 1, 0.08]
+      - [0, 0, 0, 0]
+    offset: 0.25
+
+  - name: object2
+    object_profile: bluenb
+    object_attach_to: denso_suction_cup2
+    contact_profile: analytical_rigid123
+    T_link_object:
+      - [0, -1, 0, 0]
+      - [-1, 0, 0, 0]
+      - [0, 0, -1, 12.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0, -1, 0, 0.525]
+      - [1, 0, 0, -0.362]
+      - [0, 0, 1, 0.042]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [-1, 0, 0, 0.34]
+      - [0, -1, 0, +0.4]
+      - [0, 0, 1, 0.08]
+      - [0, 0, 0, 0]
+    offset: 0.30
+
+  - name: object4
+    object_profile: carton_box
+    object_attach_to: denso_suction_cup2
+    contact_profile: analytical_rigid123
+    T_link_object:
+      - [1, 0, 0, 0e-3]
+      - [0, -1, 0, 0]
+      - [0, 0, -1, 28.5e-3]
+      - [0, 0, 0, 1]
+    T_start: 
+      - [0.939692620, 0.342020143, 0, 0.531]
+      - [-0.342020143, 0.939692620, 0, -0.355]
+      - [0, 0, 1, 0.]
+      - [0, 0, 0, 0]
+    T_goal:
+      - [0, -1, 0, 0.38]
+      - [1, 0, 0, +0.40]
+      - [0, 0, 1, 0.09]
+      - [0, 0, 0, 0]
+    offset: 0.30

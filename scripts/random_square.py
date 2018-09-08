@@ -1,3 +1,7 @@
+"""This script show how the procedure for approximating contact
+stability is applied on a 2D dataset.
+
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 import random

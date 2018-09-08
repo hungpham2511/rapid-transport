@@ -2,8 +2,9 @@ import yaml, os
 
 
 # This variable should be set as an environment variable
-TOPPRA_APP_DATA_DIR = "~/git/toppra-object-transport/data"
-TOPPRA_APP_MODEL_DIR = "~/git/toppra-object-transport/models"
+TOPPRA_APP_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+TOPPRA_APP_MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models"))
+# TOPPRA_APP_MODEL_DIR = "~/git/toppra-object-transport/models"
 DEFAULT_CONF_FILE = os.path.join(TOPPRA_APP_DATA_DIR, "conf.yaml")
 
 
@@ -12,15 +13,14 @@ class Database(object):
     profiles.
 
     """
-    def __init__(self, conf_file=DEFAULT_CONF_FILE):
-        with open(os.path.expanduser(conf_file)) as f:
-            self.options = yaml.load(f.read())
-        self.options['contact_profile_dir'] = os.path.expanduser(self.options['contact_profile_dir'])
-        self.options['object_profile_dir'] = os.path.expanduser(self.options['object_profile_dir'])
-        self.options['robot_profile_dir'] = os.path.expanduser(self.options['robot_profile_dir'])
-        self.options['trajectory_profile_dir'] = os.path.expanduser(self.options['trajectory_profile_dir'])
-        self.options['algorithm_profile_dir'] = os.path.expanduser(self.options['algorithm_profile_dir'])
-        self.options['contact_data_dir'] = os.path.expanduser(self.options['contact_data_dir'])
+    def __init__(self):
+        self.options = {}
+        self.options['contact_profile_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "contacts.yaml")
+        self.options['object_profile_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "objects.yaml")
+        self.options['robot_profile_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "robots.yaml")
+        self.options['trajectory_profile_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "trajectories.yaml")
+        self.options['algorithm_profile_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "algorithms.yaml")
+        self.options['contact_data_dir'] = os.path.join(TOPPRA_APP_DATA_DIR, "contact_data")
 
         with open(self.options['contact_profile_dir']) as f:
             self.all_contacts = yaml.load(f.read())

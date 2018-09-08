@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Kinbody name="denso_base">
+
+  <body name="top_plate">
+    <Geom type="box">
+      <Extents>0.25 0.25 0.01</Extents>
+      <diffusecolor>0.8 0.8 0.8</diffusecolor>
+      <translation>0 0 -0.01</translation>
+    </Geom>
+  </body>
+  
+  <body name="padding">
+    <Geom type="box" modifiable="true">
+      <Extents>0.26 0.005 0.01</Extents>
+      <diffusecolor>1 0 0</diffusecolor>
+      <transparency>0.25</transparency>
+      <translation>0 0.255 -0.01</translation>
+    </Geom>
+    <Geom type="box">
+      <Extents>0.26 0.005 0.01</Extents>
+      <diffusecolor>1 0 0</diffusecolor>
+      <transparency>0.25</transparency>
+      <translation>0 -0.255 -0.01</translation>
+    </Geom>
+    <Geom type="box">
+      <Extents>0.005 0.26 0.01</Extents>
+      <diffusecolor>1 0 0</diffusecolor>
+      <transparency>0.25</transparency>
+      <translation>0.255 0 -0.01</translation>
+    </Geom>
+    <Geom type="box">
+      <Extents>0.005 0.26 0.01</Extents>
+      <diffusecolor>1 0 0</diffusecolor>
+      <transparency>0.25</transparency>
+      <translation>-0.255 0 -0.01</translation>
+    </Geom>
+  </body>
+  
+  <body name="leg1">
+    <offsetfrom>top_plate</offsetfrom>
+    <Translation>0.22 0.22 -0.305</Translation>
+    <Geom type="box">
+      <Extents>0.02 0.02 0.285</Extents>
+      <diffusecolor>0.8 0.8 0.8</diffusecolor>
+    </Geom>
+  </body>
+
+  <body name="leg2">
+    <offsetfrom>top_plate</offsetfrom>
+    <Translation>-0.22 0.22 -0.305</Translation>
+    <Geom type="box">
+      <Extents>0.02 0.02 0.285</Extents>
+      <diffusecolor>0.8 0.8 0.8</diffusecolor>
+    </Geom>
+  </body>
+
+  <body name="leg3">
+    <offsetfrom>top_plate</offsetfrom>
+    <Translation>-0.22 -0.22 -0.305</Translation>
+    <Geom type="box">
+      <Extents>0.02 0.02 0.285</Extents>
+      <diffusecolor>0.8 0.8 0.8</diffusecolor>
+    </Geom>
+  </body>
+
+  <body name="leg4">
+    <offsetfrom>top_plate</offsetfrom>
+    <Translation>0.22 -0.22 -0.305</Translation>
+    <Geom type="box">
+      <Extents>0.02 0.02 0.285</Extents>
+      <diffusecolor>0.8 0.8 0.8</diffusecolor>
+    </Geom>
+  </body>
+  
+  <!-- adjacent links -->
+  <adjacent>top_plate leg1</adjacent>
+  <adjacent>top_plate leg2</adjacent>
+  <adjacent>top_plate leg3</adjacent>
+  <adjacent>top_plate leg4</adjacent>
+  
+  <!-- static joints -->
+  <joint name="joint_padding" type="hinge" enable="false">
+    <body>top_plate</body>
+    <body>padding</body>
+    <limits>0 0</limits>
+  </joint>
+  <joint name="joint_leg1" type="hinge" enable="false">
+    <body>top_plate</body>
+    <body>leg1</body>
+    <limits>0 0</limits>
+  </joint>
+  <joint name="joint_leg2" type="hinge" enable="false">
+    <body>top_plate</body>
+    <body>leg2</body>
+    <limits>0 0</limits>
+  </joint>
+  <joint name="joint_leg3" type="hinge" enable="false">
+    <body>top_plate</body>
+    <body>leg3</body>
+    <limits>0 0</limits>
+  </joint>
+  <joint name="joint_leg4" type="hinge" enable="false">
+    <body>top_plate</body>
+    <body>leg4</body>
+    <limits>0 0</limits>
+  </joint>
+  
+</Kinbody>

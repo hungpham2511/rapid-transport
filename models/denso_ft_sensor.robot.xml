@@ -3,7 +3,7 @@
 
   <!-- Include components (bottom-up) -->
   <!-- Denso -->
-  <robot file="robots/denso_vs060.dae"></robot>
+  <robot file="denso_vs060.dae"></robot>
 
   <!-- Rear connector -->
   <kinbody>

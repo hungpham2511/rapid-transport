@@ -6,10 +6,15 @@ import matplotlib.pyplot as plt
 import yaml
 import openravepy as orpy
 import argparse
-
+import logging
+logger = logging.getLogger('transport.modelling')
 transport.utils.setup_logging("DEBUG")
 
-ROBOT_MODEL_DIR = os.path.expanduser('~/git/toppra-object-transport/models/denso_ft_sensor_suction.robot.xml')
+ROBOT_MODEL_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                 os.path.pardir,
+                 "models/caged_denso_ft_sensor_suction.env.xml"))
+logger.info("Looking for robot model at \n {:}".format(ROBOT_MODEL_DIR))
 CONTACT_OUTPUT_ID = "analytical_rigid" + "1234"
 
 # Parameters of the contact model
@@ -69,7 +74,7 @@ def main(simplify=False):
     ext = poly.get_generators()
     ext = np.array(ext)
     t_elapsed = time.time() - t0
-    print("Approximate with N={2:d} points:\n\tFound {0:d} extreme points in {1:10.3f} secs".format(ext.shape[0], t_elapsed, N))
+    logger.info("Approximate with N={2:d} points:\n\tFound {0:d} extreme points in {1:10.3f} secs".format(ext.shape[0], t_elapsed, N))
     f_extreme_pts = ext[:, 1: 1 + 3 * N + 3]
 
     # Transform to interacting wrench space:
@@ -122,11 +127,11 @@ def main(simplify=False):
         "constraint_coeffs_file": CONTACT_OUTPUT_ID + ".npz",
         "params": {"simplify": simplify, "N": N, "PA": PA, "mu": mu, "r": r, "fmax": fmax}
     }}
-    print("db entry (to copy manually)\n\nbegin -----------------\n\n{:}\nend--------".format(yaml.dump(contact_profile)))
+    logger.info("db entry (to copy manually)\n\nbegin -----------------\n\n{:}\nend--------".format(yaml.dump(contact_profile)))
     cmd = raw_input("Save constraint coefficients A, b y/[N]?")
     if cmd == "y":
         np.savez("{:}.npz".format(CONTACT_OUTPUT_ID), A=A, b=b)
-        print("Saved coefficients to {:}!".format(os.path.curdir))
+        logger.info("Saved coefficients to {:}!".format(os.path.curdir))
     else:
         exit(1)
 

@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  config.vm.box = "bento/ubuntu-16.04"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+    vb.memory = 2048
+    vb.cpus = 2
+  end
+
+  # toppra should be in the same root folder as fast-transport
+  config.vm.synced_folder "../", "/home/vagrant/git/fast-transport"
+  config.vm.synced_folder "../../toppra/", "/home/vagrant/git/toppra"
+  
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo add-apt-repository ppa:klaus-vormweg/awesome
+    sudo apt-get update
+    sudo apt-get install -y --no-install-recommends build-essential cmake doxygen python-dev liblapack-dev libeigen3-dev gfortran python-tk python-setuptools git-core python-numpy
+    sudo apt install -y --no-install-recommends awesome awesome-extra ubuntu-gnome-desktop
+    sudo apt install -y --no-install-recommends virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
+    sudo apt install -y --no-install-recommends emacs
+  SHELL
+
+  # A second provisioner with no root privilege. 
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    sudo apt purge python-pip python-scipy
+    pip install -U pip
+
+    # install openrave-stack
+    mkdir -p ~/git
+    cd ~/git/ && git clone https://github.com/crigroup/openrave-installation
+    cd openrave-installation
+    ./install-dependencies.sh
+    ./install-osg.sh
+    ./install-fcl.sh
+    ./install-openrave.sh   
+
+    # install toppra
+    cd ~/git/toppra
+    pip install -r requirement.txt --user
+    python setup.py develop --user
+
+  SHELL
+
+end

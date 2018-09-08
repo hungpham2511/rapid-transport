@@ -13,6 +13,7 @@ def main():
     parser = argparse.ArgumentParser(description="Entry point to a collection of programs for object "
                                                  "transportation I wrote while working on a paper.")
     subparsers = parser.add_subparsers()
+
     ###########################################################################
     #                        Pick-and-place subparser demo                    #
     ###########################################################################
@@ -48,17 +49,15 @@ def main():
     ###########################################################################
     parser_rob = subparsers.add_parser('robust-experiment',
                                        description="A program for parametrizing and "
-                                       "executing a single trajectory.")
+                                       "executing a single path.")
     parser_rob.set_defaults(which='robust-experiment')
     parser_rob.add_argument("-s", '--scene_path', help="Path to an OpenRAVE scene.", default=DEFAULT_SCENE_PATH)
     parser_rob.add_argument("-r", '--robot_name', help="Name of the OpenRAVE robot.", default=DEFAULT_ROBOT_NAME)
-
     parser_rob.add_argument("-c", '--contact_id', help="Id of the contact profile", required=True)
     parser_rob.add_argument("-o", '--object_id', help="Id of the object profile", required=True)
     parser_rob.add_argument("-a", '--attach', help="Name of the link or manipulator the object is attached to.", required=True)
     parser_rob.add_argument("-T", '--transform', help="Transformation T_{link}_{object}", required=True)
     parser_rob.add_argument("-t", '--trajectory_id', help="Id of the trajectory to execute.", required=True)
-
     parser_rob.add_argument("-S", '--strategy', help="Parameterization strategy. "
                             "Can be `kin_only` or `w_contact`.", required=True)
     parser_rob.add_argument("-l", "--solver", help="hotqoases or seidel", default='hotqpoases')

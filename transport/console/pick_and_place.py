@@ -4,11 +4,12 @@ import toppra
 import numpy as np
 import yaml
 import logging
+import itertools
 
 try:
-    import raveutils
+    # these are needed only if executing on the real robot.
     import rospy
-    from denso_control.controllers import JointPositionController, JointTrajectoryController
+    from denso_control.controllers import JointTrajectoryController
     from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 except ImportError:
     pass
@@ -32,6 +33,73 @@ def main(*args, **kwargs):
     else:
         logger.fatal("Pick and place demo fails!")
 
+
+def plan_to_joint_configuration(robot, qgoal, pname='BiRRT', max_iters=20,
+                                max_ppiters=40, try_swap=False):
+    """
+    Plan a trajectory to the given `qgoal` configuration.
+
+    Parameters
+    ----------
+    robot: orpy.Robot
+    The OpenRAVE robot
+    qgoal: array_like
+    The goal configuration
+    pname: str
+    Name of the planning algorithm. Available options are: `BasicRRT`, `BiRRT`
+    max_iters: float
+    Maximum iterations for the planning stage
+    max_ppiters: float
+    Maximum iterations for the post-processing stage. It will use a parabolic
+    smoother wich short-cuts the trajectory and then smooths it
+    try_swap: bool
+    If set, will compute the direct and reversed trajectory. The minimum
+    duration trajectory is used.
+
+    Returns
+    -------
+    traj: orpy.Trajectory
+    Planned trajectory. If plan fails, this function returns `None`.
+    """
+    qstart = robot.GetActiveDOFValues()
+    env = robot.GetEnv()
+    planner = orpy.RaveCreatePlanner(env, pname)
+    params = orpy.Planner.PlannerParameters()
+    params.SetMaxIterations(max_iters)
+    if max_ppiters > 0:
+        params.SetPostProcessing('ParabolicSmoother',
+                                 '<_nmaxiterations>{0}</_nmaxiterations>'.format(max_ppiters))
+    else:
+        params.SetPostProcessing('', '')
+        # Plan trajectory
+    best_traj = None
+    min_duration = float('inf')
+    reversed_is_better = False
+    count = 0
+    for qa, qb in itertools.permutations([qstart, qgoal], 2):
+        count += 1
+        with robot:
+            robot.SetActiveDOFValues(qa)
+            params.SetGoalConfig(qb)
+            params.SetRobotActiveJoints(robot)
+            initsuccess = planner.InitPlan(robot, params)
+            if initsuccess:
+                traj = orpy.RaveCreateTrajectory(env, '')
+                status = planner.PlanPath(traj)             # Plan the trajectory
+                if status == orpy.PlannerStatus.HasSolution:
+                    duration = traj.GetDuration()
+                    if duration < min_duration:
+                        min_duration = duration
+                        best_traj = orpy.RaveCreateTrajectory(env, traj.GetXMLId())
+                        best_traj.Clone(traj, 0)
+                        if count == 2:
+                            reversed_is_better = True
+        if not try_swap:
+            break
+    # Check if we need to reverse the trajectory
+    if reversed_is_better:
+        best_traj = orpy.planningutils.ReverseTrajectory(best_traj)
+    return best_traj
 
 def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100):
     """Plan a trajectory from the robot's current configuration to a new
@@ -78,8 +146,8 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
             return None
     for body in all_grabbed:
         robot.Grab(body)
-    # Plan trajectory to that point
-    traj0 = raveutils.planning.plan_to_joint_configuration(
+        # Plan trajectory to that point
+    traj0 = plan_to_joint_configuration(
         robot, qgoal, max_ppiters=max_ppiters, max_iters=max_iters)
     return traj0
 
@@ -120,11 +188,11 @@ class PickAndPlaceDemo(object):
         else:
             setup_logging(level="INFO")
             toppra.utils.setup_logging(level="INFO")
-        db = Database()
-        _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
+            db = Database()
+            _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
             self._scenario = yaml.load(f.read())
-        _world_dir = expand_and_join(db.get_model_dir(), self._scenario['world_xml_dir'])
+            _world_dir = expand_and_join(db.get_model_dir(), self._scenario['world_xml_dir'])
         if env is None:
             self._env = orpy.Environment()
         else:
@@ -136,7 +204,8 @@ class PickAndPlaceDemo(object):
         self._robot.SetDOFVelocityLimits(self.slowdown * self._robot.GetDOFVelocityLimits())
         self._robot.SetDOFAccelerationLimits(self.slowdown * self._robot.GetDOFAccelerationLimits())
         self._objects = []
-        n = rospy.init_node("pick_and_place_planner")
+        if execute != 0:
+            n = rospy.init_node("pick_and_place_planner")
         if self.execute == 0:
             logger.info("Only run in OpenRAVE.")
         elif self.execute == 3:
@@ -170,6 +239,12 @@ class PickAndPlaceDemo(object):
         res = self._env.SetViewer('qtosg')
         time.sleep(0.5)
         return True
+
+    def get_time(self):
+        if self.execute == 0:
+            return time.time()
+        else:
+            return rospy.get_time()
 
     def get_env(self):
         return self._env
@@ -324,7 +399,7 @@ class PickAndPlaceDemo(object):
         # 3. APPROACH: visit the same configuration as 1.
         # 4. TRANSPORT: visit the goal configuration.
         for obj_dict in self._scenario['objects']:
-            t0 = rospy.get_time()
+            t0 = self.get_time()
             # Basic setup
             manip_name = obj_dict["object_attach_to"]
             manip = self.get_robot().SetActiveManipulator(manip_name)
@@ -339,20 +414,20 @@ class PickAndPlaceDemo(object):
                 T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
             q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
 
-            t1 = rospy.get_time()
+            t1 = self.get_time()
             # 1. APPROACH
             logger.info("Plan path to APPROACH")
             traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
-            t1a = rospy.get_time()
+            t1a = self.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
 
             # 2. REACH: Move a "short" trajectory to reach the object
             logger.info("Plan path to REACH")
-            t2 = rospy.get_time()
+            t2 = self.get_time()
             traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
-            t2a = rospy.get_time()
+            t2a = self.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
@@ -364,7 +439,7 @@ class PickAndPlaceDemo(object):
             # trajectory to reach the REACH position, another
             # trajectory to reach the GOAL position. Merge them, then
             # execute.
-            t3 = rospy.get_time()
+            t3 = self.get_time()
             logger.info("Plan path to GOAL")
             ## 1st trajectory
             traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
@@ -389,7 +464,7 @@ class PickAndPlaceDemo(object):
             traj2_rave.Init(spec)
             for p in traj2_waypoints:
                 traj2_rave.Insert(traj2_rave.GetNumWaypoints(), p)
-            t3a = rospy.get_time()
+            t3a = self.get_time()
             planner = orpy.RaveCreatePlanner(self._env, "ParabolicSmoother")
             params = orpy.Planner.PlannerParameters()
             params.SetRobotActiveJoints(self._robot)
@@ -400,12 +475,12 @@ class PickAndPlaceDemo(object):
             if not success or not status:
                 logger.fatal("[Plan Transport Path] Init status: {1:}, Plan status: {0:}. "
                              "Use traj2_rave directly.".format(status, success))
-            t3b = rospy.get_time()
+            t3b = self.get_time()
 
             # Retime the transport trajectory and execute it
             logger.debug("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
             logger.debug("Retime using toppra.")
-            t4 = rospy.get_time()
+            t4 = self.get_time()
             contact = self.get_object(obj_dict['name']).get_contact()
             contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
@@ -414,7 +489,7 @@ class PickAndPlaceDemo(object):
             if traj2_retimed is None:
                 logger.error("Transport trajectory retime fails! Try again without contact constraints.")
                 traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self.get_robot(), additional_constraints=[])
-            t4a = rospy.get_time()
+            t4a = self.get_time()
 
             self.check_continue()
             fail = not self.execute_trajectory(traj2_retimed)
@@ -423,7 +498,7 @@ class PickAndPlaceDemo(object):
             # release the object
             logger.info("RELEASE object")
             self._robot.Release(self.get_env().GetKinBody(obj_dict['name']))
-            t4b = rospy.get_time()
+            t4b = self.get_time()
             logger.info("Time report"
                         "\n - setup              :{0:f} secs"
                         "\n - APPROACH plan      :{1:f} secs"

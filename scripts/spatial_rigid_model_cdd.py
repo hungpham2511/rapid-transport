@@ -1,6 +1,6 @@
 import cdd
 import numpy as np
-import time
+import time, os
 import transport
 import matplotlib.pyplot as plt
 import yaml
@@ -9,7 +9,10 @@ import argparse
 
 transport.utils.setup_logging("DEBUG")
 
+ROBOT_MODEL_DIR = os.path.expanduser('~/git/toppra-object-transport/models/denso_ft_sensor_suction.robot.xml')
+CONTACT_OUTPUT_ID = "analytical_rigid" + "1234"
 
+# Parameters of the contact model
 PA = 22.0  # (Newton) suction force
 mu = 0.3  # coeff of friction
 r = 12.5e-3  # radius of the cup
@@ -21,11 +24,17 @@ fmax = 200.0 / N  # Maximum allowable magnitude of individual contact forces
 
 
 def main(simplify=False):
-    """This script computes the H-rep of a grasp stability constraint
-    model. There are two main steps. First, find the extreme points in
-    the space of concatenated component vectors. Second, find an inner
-    approximation of this set using guidance from a dynamic model.
+    """Compute the contact stability constraint.
 
+    The contact stability is the H-representation of the set of
+    feasible interaction wrenches that a suction cup exerts on the
+    object.
+
+    There are two main steps. First, find the extreme points in the
+    space of concatenated component vectors. Second, find an inner
+    approximation of this set using guidance from a dynamic model.
+    The second stage is carried out if `simplify` is True, otherwise
+    it is neglected.
     """
     # Step 1: find the extreme points in the space of concatenated
     # component vectors.
@@ -51,7 +60,7 @@ def main(simplify=False):
                                                                       [0, 0, 1]]
         b_ineq[4 * N + 2 * i: 4 * N + 2 * i + 2] = [0, fmax]
 
-    # Transform from H-rep to V-rep
+    # Transform from H-rep to V-rep using cdd
     t0 = time.time()
     mat = cdd.Matrix(np.hstack((b_ineq.reshape(-1, 1), -A_ineq)), number_type='float')
     mat.rep_type = cdd.RepType.INEQUALITY
@@ -83,7 +92,7 @@ def main(simplify=False):
     # set of physically realization wrenches.
     if simplify:
         env = orpy.Environment()
-        env.Load('/home/hung/git/toppra-object-transport/models/denso_ft_sensor_suction.robot.xml')
+        env.Load(ROBOT_MODEL_DIR)
         robot = env.GetRobots()[0]
         contact_base = transport.Contact(robot, "denso_suction_cup2",
                                          np.eye(4), None, None, raw_data=w0_extreme_pts)
@@ -104,23 +113,22 @@ def main(simplify=False):
     ))
 
     # save coefficients
-    id_ = "analytical_rigid" + "1234"
     A, b = w0_hull.get_halfspaces()
-    contact_profile = {id_: {
-        "id": id_,
+    contact_profile = {CONTACT_OUTPUT_ID: {
+        "id": CONTACT_OUTPUT_ID,
         "attached_to_manipulator": "denso_suction_cup2",
         "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
         "position": [0, 0, 0],
-        "constraint_coeffs_file": id_ + ".npz",
+        "constraint_coeffs_file": CONTACT_OUTPUT_ID + ".npz",
         "params": {"simplify": simplify, "N": N, "PA": PA, "mu": mu, "r": r, "fmax": fmax}
     }}
     print("db entry (to copy manually)\n\nbegin -----------------\n\n{:}\nend--------".format(yaml.dump(contact_profile)))
     cmd = raw_input("Save constraint coefficients A, b y/[N]?")
     if cmd == "y":
-        np.savez("/home/hung/Dropbox/ros_data/toppra_application/{:}.npz".format(id_), A=A, b=b)
-        print("Saved coefficients to database!")
+        np.savez("{:}.npz".format(CONTACT_OUTPUT_ID), A=A, b=b)
+        print("Saved coefficients to {:}!".format(os.path.curdir))
     else:
-        exit("abc")
+        exit(1)
 
 
 if __name__ == '__main__':

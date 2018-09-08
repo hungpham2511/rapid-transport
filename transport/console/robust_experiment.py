@@ -15,7 +15,6 @@ try:
 except ImportError as e:
     print e
     pass
-import ftsensorless as ft
 import openravepy as orpy
 import numpy as np
 import toppra
@@ -29,6 +28,84 @@ _tmp_dir = "/home/hung/.temp.toppra/"
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def move_to_joint_position(q, joint_controller, robot, planner='birrt',
+                           max_planner_iterations=20, max_postprocessing_iterations=40,
+                           dt=1.0 / 150, require_confirm=True,
+                           velocity_factor=0.3,
+                           acceleration_factor=0.3):
+    """Move the robot to a desired joint position.
+
+    The routine first plans a collision-free path in the internal
+    environment of `robot`. Then if a collision-free path is found, it
+    executes and waits for trajectory execution to finish before
+    terminating.
+
+    Args:
+        q (array): Shape (6,). Goal joint position.
+        joint_controller (JointPositionController): A connected joint controller.
+        robot (OpenRAVE Robot): The Denso model.
+        planner (str, optional): OpenRAVE planner to use.
+        max_planner_iterations (int, optional): Number of planning iterations.
+        max_postprocessing_iterations (int, optional): Number of post-processing iterations.
+        dt (float, optional): Time step.
+        velocity_factor (float, optional): Reduction factor.
+        acceleration_factor (float, optional): Reduction factor.
+
+    Returns:
+        out (bool): True if successfully moves the robot to `q`. Else False.
+
+    """
+    q_current = joint_controller.get_joint_positions()
+    env = robot.GetEnv()
+    vlim_original = robot.GetDOFVelocityLimits()
+    alim_original = robot.GetDOFAccelerationLimits()
+    robot.SetDOFVelocityLimits(vlim_original * velocity_factor)
+    robot.SetDOFAccelerationLimits(alim_original * acceleration_factor)
+    with env:
+        robot.SetDOFValues(q_current, dofindices=robot.GetActiveManipulator().GetArmIndices())
+        rave_planner = orpy.RaveCreatePlanner(env, planner)
+        params = orpy.Planner.PlannerParameters()
+        robot.SetActiveDOFs(robot.GetActiveManipulator().GetArmIndices())
+        params.SetRobotActiveJoints(robot)
+        params.SetGoalConfig(q)
+        params.SetMaxIterations(max_planner_iterations)
+        params.SetPostProcessing(
+            'ParabolicSmoother',
+            '<_nmaxiterations>{0}</_nmaxiterations>'.format(max_postprocessing_iterations))
+        success = rave_planner.InitPlan(robot, params)
+        if not success:
+            return False
+        # Plan a trajectory
+        traj = orpy.RaveCreateTrajectory(env, '')
+        status = rave_planner.PlanPath(traj)
+        if status != orpy.PlannerStatus.HasSolution:
+            return False
+
+    if require_confirm:
+        raw_input("Trajectory planned with {}! Press [Enter] to move to\n q:= {}".format(planner, q))
+
+    robot.SetDOFVelocityLimits(vlim_original)
+    robot.SetDOFAccelerationLimits(alim_original)
+
+    if isinstance(joint_controller, JointPositionController):
+        # Execute the trajectory
+        spec = traj.GetConfigurationSpecification()
+        time = 0.
+        rate = rospy.Rate(int(1/dt))
+        while time < traj.GetDuration():
+            trajdata = traj.Sample(time)
+            values = spec.ExtractJointValues(trajdata, robot,
+                                             robot.GetActiveManipulator().GetArmIndices(), 0)
+            # Send joint signal
+            joint_controller.set_joint_positions(values)
+            robot.SetDOFValues(values, dofindices=robot.GetActiveManipulator().GetArmIndices())
+            time += dt
+            rate.sleep()
+        return True
+    else:
+        raise ValueError('controller [{}] not supported!'.format(joint_controller))
 
 
 def ros_traj_from_rave(robot, traj):
@@ -155,29 +232,6 @@ def convole_signal(x_arr, shaper, x_init):
     return x_arr_conv
 
 
-class bCap_JointTrajectoryController(JointControllerBase):
-    def __init__(self, namespace, timeout):
-        super(bCap_JointTrajectoryController, self).__init__(namespace, timeout)
-        rospy.wait_for_service("/bcap/trajectory_server", timeout=5)
-        rospy.loginfo("Found motion server, preparing to call.")
-        self._service = rospy.ServiceProxy('/bcap/trajectory_server', ExecTrajectorybCap)
-
-    def set_trajectory(self, trajectory):
-        """ Store trajectory internally.
-        """
-        self._request = ExecTrajectorybCapRequest()
-        self._request.trajectory.joint_names = ["j1", "j2", "j3", "j4", "j5", "j6"]
-        self._request.trajectory = trajectory
-
-    def start(self, delay=0.1):
-        """ Send command to bCapServer.
-        """
-        rospy.sleep(delay)
-        rospy.loginfo("Send trajectory execution request to the RC8 controller")
-        response = self._service(self._request)
-        rospy.loginfo("Receive response: {:}".format(response))
-
-
 class TrajectoryRunner(object):
     def __init__(self, robot, execute, dt=8e-3):
         self._execute = execute
@@ -188,7 +242,8 @@ class TrajectoryRunner(object):
             self._joint_controller = JointPositionController("denso")
         # 2: trajectory-controller (via bCapServier)
         elif execute == 2:
-            self._trajectory_controller = bCap_JointTrajectoryController("bcap", 2)
+            assert False, "This option is depreciated"
+            # self._trajectory_controller = bCap_JointTrajectoryController("bcap", 2)
         # 3: trajectory-controller (via denso_control/trajectory controller)
         elif execute == 3:
             self._trajectory_controller = JointTrajectoryController("denso")
@@ -261,7 +316,7 @@ class TrajectoryRunner(object):
             exit()
         if self._execute:
             q_init = q_arr[0]
-            ft.rave_utils.move_to_joint_position(
+            move_to_joint_position(
                 q_init, self._joint_controller, self._robot, dt=self._dt, require_confirm=True,
                 velocity_factor=0.2, acceleration_factor=0.2)
         else:
@@ -655,8 +710,11 @@ def main(env, scene_path, robot_name, contact_id, object_id, attach, transform, 
                   ".... Trajectory duration         {:.3f} sec\n"
                   ".... Total Parametrization time  {:.3f} sec" .format(ts[-1], t0a - t0))
 
-        # Shape trajectory
+        # Trajectory shaping
         shaper = get_shaper("nil")
+        # note: trajectory shaping can be used to remove the object
+        # natural vibration. Try uncomment the below line to see if it
+        # works for your application.
         # shaper = get_shaper("ZVD")
         q_arr = shape_trajectory(qs, shaper)
         # preview stuffs

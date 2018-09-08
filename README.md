@@ -1,5 +1,11 @@
-This repo contains programs I wrote while writing my paper on using
-TOPP-RA for object transportation.
+Critically fast pick-and-place with suction cups
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This repo contains programs for planning *critically fast* motion for
+robotic manipulators performing pick-and-place with a suction cup.
+
+I wrote while writing my paper on
+using TOPP-RA for object transportation.
 
 These programs are used for simmplifying the contact profiles, viewing
 test trajectories, computing simple objects' inertial properties,

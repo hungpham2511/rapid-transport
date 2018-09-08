@@ -1,10 +1,9 @@
 
-# NOTE
-#rave_model: use only for collision checking.
 
-# position and orientation are of the transformation of the object in
-# the manipulator frame. These two fields are deprecated. Programs
-# should now require explicit value of T_link_object.
+# note: position and orientation are of the transformation of the
+# object in the manipulator frame. These two fields are
+# deprecated. Programs should now require explicit value of
+# T_link_object.
 
 squarewood2:
   description: The square wood block. New.

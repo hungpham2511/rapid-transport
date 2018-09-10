@@ -50,7 +50,7 @@ For more information on toppra, see [this page](https://hungpham2511.github.io/t
 interested in: i) `generate_contact_constraint.py` and ii)
 `transport.paper pick-demo`.
 
-Running `generate_contact_constraint.py`:
+### Running `generate_contact_constraint.py`
 
 ``` bash
 cd <rapid-transport>dir
@@ -65,7 +65,7 @@ If you are just trying out, check `data/contacts.yaml` and
 `data/contact_data/analytical_rigid1234.npyz`. This is a pre-generated
 constraint that is used in the paper.
 
-Running `pick-demo`
+### Running `pick-demo`
 
 ``` bash
 transport.paper pick-demo --scene "scenarios/exp2.scenario.yaml"

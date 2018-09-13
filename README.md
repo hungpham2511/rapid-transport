@@ -38,7 +38,7 @@ python setup.py install --user
 
 Now you can run `rapid-transport`
 ```bash
-git clone https://github.com/hungpham2511/toppra-object-transport && cd toppra-object-transport
+git clone https://github.com/hungpham2511/rapid-transport && cd rapid-transport
 pip install -r requirements.txt --user
 python setup.py install --user
 ```

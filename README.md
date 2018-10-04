@@ -40,7 +40,7 @@ Now you can run `rapid-transport`
 ```bash
 git clone https://github.com/hungpham2511/toppra-object-transport && cd toppra-object-transport
 pip install -r requirements.txt --user
-python setup.py install --user
+python setup.py develop --user
 ```
 For more information on toppra, see [this page](https://hungpham2511.github.io/toppra/).
 

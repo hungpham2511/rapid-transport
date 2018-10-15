@@ -32,6 +32,7 @@ cd openrave-installation
 
 # install toppra
 git clone https://github.com/hungpham2511/toppra && cd toppra/
+git checkout 86cd270  # preferred version of toppra, you can try the lastest one but not guaranteed to work.
 pip install -r requirements.txt --user
 python setup.py install --user
 ```
@@ -73,8 +74,6 @@ transport.paper pick-demo --scene "scenarios/exp2.scenario.yaml"
 
 This executable runs the demo discussed in the paper. You will need
 OpenRAVE to run this one.
-
-
 
 ## Citation
 

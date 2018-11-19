@@ -74,6 +74,16 @@ transport.paper pick-demo --scene "scenarios/exp2.scenario.yaml"
 This executable runs the demo discussed in the paper. You will need
 OpenRAVE to run this one.
 
+## Experiment with the real robot
+
+``` bash
+roslaunch denso_control rc8_ros_driver.launch rate:=125
+# or to run gazebo simulation
+roslaunch denso_gazebo denso_vs060.launch
+
+roslaunch denso_control joint_trajectory_controller.launch namespace:=denso
+```
+
 
 
 ## Citation

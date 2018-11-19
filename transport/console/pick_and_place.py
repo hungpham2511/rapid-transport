@@ -42,24 +42,24 @@ def plan_to_joint_configuration(robot, qgoal, pname='BiRRT', max_iters=20,
     Parameters
     ----------
     robot: orpy.Robot
-    The OpenRAVE robot
+        The OpenRAVE robot
     qgoal: array_like
-    The goal configuration
+        The goal configuration
     pname: str
-    Name of the planning algorithm. Available options are: `BasicRRT`, `BiRRT`
+        Name of the planning algorithm. Available options are: `BasicRRT`, `BiRRT`
     max_iters: float
-    Maximum iterations for the planning stage
+        Maximum iterations for the planning stage
     max_ppiters: float
-    Maximum iterations for the post-processing stage. It will use a parabolic
-    smoother wich short-cuts the trajectory and then smooths it
+        Maximum iterations for the post-processing stage. It will use a parabolic
+        smoother wich short-cuts the trajectory and then smooths it
     try_swap: bool
-    If set, will compute the direct and reversed trajectory. The minimum
-    duration trajectory is used.
+        If set, will compute the direct and reversed trajectory. The minimum
+        duration trajectory is used.
 
     Returns
     -------
     traj: orpy.Trajectory
-    Planned trajectory. If plan fails, this function returns `None`.
+        Planned trajectory. If plan fails, this function returns `None`.
     """
     qstart = robot.GetActiveDOFValues()
     env = robot.GetEnv()
@@ -181,12 +181,17 @@ class PickAndPlaceDemo(object):
         equals 0.5 times the new duration..
 
         A value of 1.0 means execute at computed speed.
-
+    mode: str, optional
+        PRACTICE: stop at every stage
+        RUN: only stop to release
     """
 
     def __init__(self, load_path=None, env=None, verbose=False,
-                 execute=0, dt=8e-3, slowdown=1.0):
+                 execute=0, dt=8e-3, slowdown=1.0, mode='PRACTICE'):
         assert load_path is not None, "A scenario must be supplied"
+        if mode not in ['PRACTICE', 'RUN']:
+            raise(ValueError("mode {:} known".format(mode)))
+        self.mode = mode
         self.verbose = verbose
         self.execute = execute
         self.slowdown = slowdown
@@ -207,6 +212,7 @@ class PickAndPlaceDemo(object):
         else:
             self._env = env
             self._env.Reset()
+        self._qHOME = np.array([0, 0.571, 1.0, 0, 0, 0])
         self._env.SetDebugLevel(3)  # Less verbose debug
         self._env.Load(_world_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
@@ -450,7 +456,8 @@ class PickAndPlaceDemo(object):
             traj0 = plan_to_manip_transform(
                 self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             t1a = self.get_time()
-            self.check_continue()
+            if self.mode == "PRACTICE":
+                self.check_continue()
             fail = not self.execute_trajectory(traj0)
             self.get_robot().WaitForController(0)
 
@@ -464,12 +471,14 @@ class PickAndPlaceDemo(object):
                 max_ppiters=200,
                 max_iters=100)
             t2a = self.get_time()
-            self.check_continue()
+            if self.mode == "PRACTICE":
+                self.check_continue()
             fail = not self.execute_trajectory(traj0b)
             self.get_robot().WaitForController(0)
             with self._env:
                 self._robot.Grab(self.get_env().GetKinBody(obj_dict['name']))
-            logger.info("Grabbing the object. Continue moving in 0.3 sec.")
+            logger.info("Grabbing the object. Continue moving in 1 sec.")
+            time.sleep(1)
 
             # 3+4: APPROACH+TRANSPORT: Plan two trajectories, one
             # trajectory to reach the REACH position, another
@@ -530,8 +539,6 @@ class PickAndPlaceDemo(object):
             contact_constraint = create_object_transporation_constraint(
                 contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
-            import ipdb
-            ipdb.set_trace()
             traj2_retimed = toppra.retime_active_joints_kinematics(
                 traj2_rave,
                 self._robot,
@@ -547,12 +554,14 @@ class PickAndPlaceDemo(object):
                     traj2_rave, self.get_robot(), additional_constraints=[])
             t4a = self.get_time()
 
-            self.check_continue()
+            if self.mode == "PRACTICE":
+                self.check_continue()
             fail = not self.execute_trajectory(traj2_retimed)
             self.get_robot().WaitForController(0)
 
             # release the object
             logger.info("RELEASE object")
+            self.check_continue()  # release object now
             self._robot.Release(self.get_env().GetKinBody(obj_dict['name']))
             t4b = self.get_time()
             logger.info("Time report"
@@ -575,7 +584,11 @@ class PickAndPlaceDemo(object):
             T_cur[2, 3] = 0.0
             self.get_env().GetKinBody(obj_dict['name']).SetTransform(T_cur)
 
+        # Move the robot back to HOME
+        trajHOME = plan_to_joint_configuration(self._robot, self._qHOME)
+        fail = not self.execute_trajectory(trajHOME)
         time.sleep(2)
+        self.check_continue()
         return not fail
 
     def check_continue(self):

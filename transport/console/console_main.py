@@ -25,10 +25,13 @@ def main():
     parser_pick.add_argument('-v', dest='verbose', action='store_true')
     parser_pick.add_argument('-d', "--slowdown", type=float, default=0.5)
     parser_pick.add_argument('-e', "--execute",
-                             help="If equals 1, send commands to JointPositionController. "
-                             "If equals 2, send commands to JointTrajectoryController. "
-                             "Otherwise, only run with OpenRAVE",
+                             help="If equals 1, send commands to JointPositionController. (not supported) "
+                                  "If equals 3, send commands to JointTrajectoryController. "
+                                  "Otherwise, only run with OpenRAVE",
                              default=0, type=int)
+    parser_pick.add_argument('-m', '--mode', default='PRACTICE',
+                             help="PRACTICE: stop at every stage\nRUN: only stop to release")
+
     
     ###########################################################################
     #                        Simplify contact subparser demo                  #
@@ -79,7 +82,7 @@ def main():
     args = parser.parse_args()
     if args.which == "pick-demo":
         pick_and_place.main(load_path=args.scene, verbose=args.verbose,
-                            execute=args.execute, slowdown=args.slowdown)
+                            execute=args.execute, slowdown=args.slowdown, mode=args.mode)
 
     elif args.which == "simplify-contact":
         simplify_contact.main(

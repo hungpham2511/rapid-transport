@@ -85,12 +85,14 @@ def plan_to_joint_configuration(robot, qgoal, pname='BiRRT', max_iters=20,
             initsuccess = planner.InitPlan(robot, params)
             if initsuccess:
                 traj = orpy.RaveCreateTrajectory(env, '')
-                status = planner.PlanPath(traj)             # Plan the trajectory
+                # Plan the trajectory
+                status = planner.PlanPath(traj)
                 if status == orpy.PlannerStatus.HasSolution:
                     duration = traj.GetDuration()
                     if duration < min_duration:
                         min_duration = duration
-                        best_traj = orpy.RaveCreateTrajectory(env, traj.GetXMLId())
+                        best_traj = orpy.RaveCreateTrajectory(
+                            env, traj.GetXMLId())
                         best_traj.Clone(traj, 0)
                         if count == 2:
                             reversed_is_better = True
@@ -101,7 +103,9 @@ def plan_to_joint_configuration(robot, qgoal, pname='BiRRT', max_iters=20,
         best_traj = orpy.planningutils.ReverseTrajectory(best_traj)
     return best_traj
 
-def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100):
+
+def plan_to_manip_transform(
+        robot, T_ee_start, q_nominal, max_ppiters=60, max_iters=100):
     """Plan a trajectory from the robot's current configuration to a new
     configuration at which the active manipulator has transform
     `T_ee_start`.
@@ -130,7 +134,8 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
         manip = robot.GetActiveManipulator()
 
         # Find a good final configuration
-        qgoals = manip.FindIKSolutions(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+        qgoals = manip.FindIKSolutions(
+            T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
         qgoal = None
         dist = 10000
         for q_ in qgoals:
@@ -142,7 +147,8 @@ def plan_to_manip_transform(robot, T_ee_start, q_nominal, max_ppiters=60, max_it
             logger.fatal("Unable to find a collision free solution.")
             cmd = raw_input("[Enter] to cont, [i] for ipdb")
             if cmd == "i":
-                import ipdb; ipdb.set_trace()
+                import ipdb
+                ipdb.set_trace()
             return None
     for body in all_grabbed:
         robot.Grab(body)
@@ -177,7 +183,9 @@ class PickAndPlaceDemo(object):
         A value of 1.0 means execute at computed speed.
 
     """
-    def __init__(self, load_path=None, env=None, verbose=False, execute=0, dt=8e-3, slowdown=1.0):
+
+    def __init__(self, load_path=None, env=None, verbose=False,
+                 execute=0, dt=8e-3, slowdown=1.0):
         assert load_path is not None, "A scenario must be supplied"
         self.verbose = verbose
         self.execute = execute
@@ -192,7 +200,8 @@ class PickAndPlaceDemo(object):
             _scenario_dir = expand_and_join(db.get_data_dir(), load_path)
         with open(_scenario_dir) as f:
             self._scenario = yaml.load(f.read())
-            _world_dir = expand_and_join(db.get_model_dir(), self._scenario['world_xml_dir'])
+            _world_dir = expand_and_join(
+                db.get_model_dir(), self._scenario['world_xml_dir'])
         if env is None:
             self._env = orpy.Environment()
         else:
@@ -201,8 +210,10 @@ class PickAndPlaceDemo(object):
         self._env.SetDebugLevel(3)  # Less verbose debug
         self._env.Load(_world_dir)
         self._robot = self._env.GetRobot(self._scenario['robot'])
-        self._robot.SetDOFVelocityLimits(self.slowdown * self._robot.GetDOFVelocityLimits())
-        self._robot.SetDOFAccelerationLimits(self.slowdown * self._robot.GetDOFAccelerationLimits())
+        self._robot.SetDOFVelocityLimits(
+            self.slowdown * self._robot.GetDOFVelocityLimits())
+        self._robot.SetDOFAccelerationLimits(
+            self.slowdown * self._robot.GetDOFAccelerationLimits())
         self._objects = []
         if execute != 0:
             n = rospy.init_node("pick_and_place_planner")
@@ -211,7 +222,8 @@ class PickAndPlaceDemo(object):
         elif self.execute == 3:
             logger.info("Be CAREFUL! Will send command to the real Denso!")
             self._trajectory_controller = JointTrajectoryController("denso")
-            self._robot.SetActiveDOFValues(self._trajectory_controller.get_joint_positions())
+            self._robot.SetActiveDOFValues(
+                self._trajectory_controller.get_joint_positions())
         else:
             logger.error("Other EXECUTE mode not supported.")
 
@@ -224,14 +236,19 @@ class PickAndPlaceDemo(object):
             self._robot.SetActiveManipulator(obj_d['object_attach_to'])
             # Generate IKFast for each active manipulator
             iktype = orpy.IkParameterization.Type.Transform6D
-            ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(self._robot, iktype=iktype)
+            ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(
+                self._robot, iktype=iktype)
             if not ikmodel.load():
-                print 'Generating IKFast {0}. It will take few minutes...'.format(iktype.name)
+                print 'Generating IKFast {0}. It will take few minutes...'.format(
+                    iktype.name)
                 ikmodel.autogenerate()
-                print 'IKFast {0} has been successfully generated'.format(iktype.name)
+                print 'IKFast {0} has been successfully generated'.format(
+                    iktype.name)
             rave_obj = self._env.GetKinBody(obj_d['name'])
             if self._env.CheckCollision(rave_obj):
-                logger.fatal("Object {:} is in collision.".format(rave_obj.GetName()))
+                logger.fatal(
+                    "Object {:} is in collision.".format(
+                        rave_obj.GetName()))
                 self.view()
                 self.check_continue()
 
@@ -271,26 +288,34 @@ class PickAndPlaceDemo(object):
     def verify_transform(self, manip, T_ee_start):
         "Check if transform `T_ee_start` can be reached with manipulator `manip`."
         fail = False
-        qstart_col = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
-        qstart_nocol = manip.FindIKSolution(T_ee_start, orpy.IkFilterOptions.IgnoreEndEffectorCollisions)
+        qstart_col = manip.FindIKSolution(
+            T_ee_start, orpy.IkFilterOptions.CheckEnvCollisions)
+        qstart_nocol = manip.FindIKSolution(
+            T_ee_start, orpy.IkFilterOptions.IgnoreEndEffectorCollisions)
         if qstart_col is None:
             fail = True
-            logger.fatal("Unable to find a collision-free configuration to reach target transform.")
+            logger.fatal(
+                "Unable to find a collision-free configuration to reach target transform.")
             if qstart_nocol is None:
                 logger.fatal("Reason: kinematic infeasibility.")
-                cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                cmd = raw_input(
+                    "[Enter] to continue/exit. [i] to drop to Ipython.")
                 if cmd == "i":
-                    import ipdb; ipdb.set_trace()
+                    import ipdb
+                    ipdb.set_trace()
             else:
                 logger.fatal("Reason: collision (kinematically feasible).")
-                logger.fatal("Collision might be due to grabbed object only, which is normal. Check viewer.")
+                logger.fatal(
+                    "Collision might be due to grabbed object only, which is normal. Check viewer.")
                 with self._robot:
                     self._robot.SetActiveDOFValues(qstart_nocol)
                     self._env.UpdatePublishedBodies()
                     logger.fatal("Jnt: {:}".format(qstart_nocol / np.pi * 180))
-                    cmd = raw_input("[Enter] to continue/exit. [i] to drop to Ipython.")
+                    cmd = raw_input(
+                        "[Enter] to continue/exit. [i] to drop to Ipython.")
                     if cmd == "i":
-                        import ipdb; ipdb.set_trace()
+                        import ipdb
+                        ipdb.set_trace()
         return fail
 
     def check_trajectory_collision(self, traj):
@@ -303,7 +328,10 @@ class PickAndPlaceDemo(object):
             q = spec.ExtractJointValues(data, self._robot, range(6), 0)
             with self._robot:
                 self._robot.SetActiveDOFValues(q)
-                logger.debug("In collision = {:}".format(self._env.CheckCollision(self._robot)))
+                logger.debug(
+                    "In collision = {:}".format(
+                        self._env.CheckCollision(
+                            self._robot)))
                 if self._env.CheckCollision(self._robot):
                     in_collision = True
         if in_collision:
@@ -405,19 +433,22 @@ class PickAndPlaceDemo(object):
             manip = self.get_robot().SetActiveManipulator(manip_name)
             Tstart = np.array(obj_dict['T_start'])  # object's transform
             Tgoal = np.array(obj_dict['T_goal'])
-            T_ee_start = np.dot(Tstart, self.get_object(obj_dict['name']).get_T_object_link())
+            T_ee_start = np.dot(
+                Tstart, self.get_object(
+                    obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_start)
             T_ee_top = np.array(T_ee_start)
             try:
                 T_ee_top[:3, 3] -= obj_dict['offset'] * T_ee_top[:3, 2]
-            except:
+            except BaseException:
                 T_ee_top[:3, 3] -= offset * T_ee_top[:3, 2]
             q_nominal = np.r_[-0.3, 0.9, 0.9, 0, 0, 0]
 
             t1 = self.get_time()
             # 1. APPROACH
             logger.info("Plan path to APPROACH")
-            traj0 = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
+            traj0 = plan_to_manip_transform(
+                self._robot, T_ee_top, q_nominal, max_ppiters=200, max_iters=100)
             t1a = self.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0)
@@ -426,7 +457,12 @@ class PickAndPlaceDemo(object):
             # 2. REACH: Move a "short" trajectory to reach the object
             logger.info("Plan path to REACH")
             t2 = self.get_time()
-            traj0b = plan_to_manip_transform(self._robot, T_ee_start, q_nominal, max_ppiters=200, max_iters=100)
+            traj0b = plan_to_manip_transform(
+                self._robot,
+                T_ee_start,
+                q_nominal,
+                max_ppiters=200,
+                max_iters=100)
             t2a = self.get_time()
             self.check_continue()
             fail = not self.execute_trajectory(traj0b)
@@ -441,24 +477,31 @@ class PickAndPlaceDemo(object):
             # execute.
             t3 = self.get_time()
             logger.info("Plan path to GOAL")
-            ## 1st trajectory
-            traj0c = plan_to_manip_transform(self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
+            # 1st trajectory
+            traj0c = plan_to_manip_transform(
+                self._robot, T_ee_top, q_nominal, max_ppiters=1, max_iters=100)
             traj0c_waypoints, traj0c_ss = self.extract_waypoints(traj0c)
-            T_ee_goal = np.dot(Tgoal, self.get_object(obj_dict['name']).get_T_object_link())
+            T_ee_goal = np.dot(
+                Tgoal, self.get_object(
+                    obj_dict['name']).get_T_object_link())
             self.verify_transform(manip, T_ee_goal)
             q_nominal = np.r_[0.3, 0.9, 0.9, 0, 0, 0]
-            ## 2nd trajectory
+            # 2nd trajectory
             self._robot.SetActiveDOFValues(traj0c_waypoints[-1])
-            traj1_transport = plan_to_manip_transform(self._robot, T_ee_goal, q_nominal, max_ppiters=1, max_iters=100)
+            traj1_transport = plan_to_manip_transform(
+                self._robot, T_ee_goal, q_nominal, max_ppiters=1, max_iters=100)
             self._robot.SetActiveDOFValues(traj0c_waypoints[0])
-            traj1_transport_waypoints, traj1_transport_ss = self.extract_waypoints(traj1_transport)
-            ## concatenate the two trajectories
-            traj2_waypoints = np.vstack((traj0c_waypoints, traj1_transport_waypoints[1:]))
+            traj1_transport_waypoints, traj1_transport_ss = self.extract_waypoints(
+                traj1_transport)
+            # concatenate the two trajectories
+            traj2_waypoints = np.vstack(
+                (traj0c_waypoints, traj1_transport_waypoints[1:]))
 
-            ## retime
-            traj2_ss = np.hstack((traj0c_ss, traj0c_ss[-1] + traj1_transport_ss[1:]))
+            # retime
+            traj2_ss = np.hstack(
+                (traj0c_ss, traj0c_ss[-1] + traj1_transport_ss[1:]))
             traj2_ss[:] = traj2_ss / traj2_ss[-1]
-            
+
             traj2_rave = orpy.RaveCreateTrajectory(self._env, "")
             spec = self._robot.GetActiveConfigurationSpecification()
             traj2_rave.Init(spec)
@@ -478,17 +521,30 @@ class PickAndPlaceDemo(object):
             t3b = self.get_time()
 
             # Retime the transport trajectory and execute it
-            logger.debug("Original traj nb waypoints: {:d}".format(traj1_transport.GetNumWaypoints()))
+            logger.debug(
+                "Original traj nb waypoints: {:d}".format(
+                    traj1_transport.GetNumWaypoints()))
             logger.debug("Retime using toppra.")
             t4 = self.get_time()
             contact = self.get_object(obj_dict['name']).get_contact()
-            contact_constraint = create_object_transporation_constraint(contact, self.get_object(obj_dict['name']))
+            contact_constraint = create_object_transporation_constraint(
+                contact, self.get_object(obj_dict['name']))
             contact_constraint.set_discretization_type(1)
-            traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self._robot, additional_constraints=[contact_constraint], solver_wrapper=SOLVER, vmult=0.999, amult=0.999)
+            import ipdb
+            ipdb.set_trace()
+            traj2_retimed = toppra.retime_active_joints_kinematics(
+                traj2_rave,
+                self._robot,
+                additional_constraints=[contact_constraint],
+                solver_wrapper=SOLVER,
+                vmult=0.999,
+                amult=0.999)
 
             if traj2_retimed is None:
-                logger.error("Transport trajectory retime fails! Try again without contact constraints.")
-                traj2_retimed = toppra.retime_active_joints_kinematics(traj2_rave, self.get_robot(), additional_constraints=[])
+                logger.error(
+                    "Transport trajectory retime fails! Try again without contact constraints.")
+                traj2_retimed = toppra.retime_active_joints_kinematics(
+                    traj2_rave, self.get_robot(), additional_constraints=[])
             t4a = self.get_time()
 
             self.check_continue()

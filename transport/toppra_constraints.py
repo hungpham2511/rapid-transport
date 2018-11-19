@@ -35,11 +35,13 @@ class ObjectTransportationConstraint(CanonicalLinearConstraint):
         self._format_string += "        F in R^({:d}, {:d})\n".format(*cnst_F.shape)
         self.identical = True
 
-    def compute_constraint_params(self, path, gridpoints):
+    def compute_constraint_params(self, path, gridpoints, scaling):
         if path.get_dof() != self.get_dof():
             raise ValueError("Wrong dimension: constraint dof ({:d}) not equal to path dof ({:d})".format(
                 self.get_dof(), path.get_dof()
             ))
+        if scaling != 1:
+            raise(NotImplementedError("Scaling functionality not implemented."))
         v_zero = np.zeros(path.get_dof())
         p = path.eval(gridpoints)
         ps = path.evald(gridpoints)
@@ -62,7 +64,7 @@ class ObjectTransportationConstraint(CanonicalLinearConstraint):
         elif self.discretization_type == 1 or self.discretization_type == DiscretizationType.Interpolation:
             return toppra.constraint.canlinear_colloc_to_interpolate(a, b, c, F, g, None, None, gridpoints, identical=self.identical)
         else:
-            raise NotImplementedError, "Other form of discretization not supported!"
+            raise(NotImplementedError("Other form of discretization not supported!"))
 
 
 def create_object_transporation_constraint(contact, solid_object, discretization_scheme=0):

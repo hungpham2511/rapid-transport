@@ -20,10 +20,12 @@ class ObjectTransportationConstraint(CanonicalLinearConstraint):
     Returns
     -------
     out :
-        FIXME   
-    
+        FIXME
+
     """
-    def __init__(self, inv_dyn, cnst_F, cnst_g, dof=None, discretization_scheme=1):
+
+    def __init__(self, inv_dyn, cnst_F, cnst_g,
+                 dof=None, discretization_scheme=1):
         super(ObjectTransportationConstraint, self).__init__()
         self.set_discretization_type(discretization_scheme)
         self.inv_dyn = inv_dyn
@@ -32,7 +34,8 @@ class ObjectTransportationConstraint(CanonicalLinearConstraint):
         self.dof = dof
         self._format_string = "    Kind: Generalized Second-order constraint\n"
         self._format_string = "    Dimension:\n"
-        self._format_string += "        F in R^({:d}, {:d})\n".format(*cnst_F.shape)
+        self._format_string += "        F in R^({:d}, {:d})\n".format(
+            *cnst_F.shape)
         self.identical = True
 
     def compute_constraint_params(self, path, gridpoints, scaling):
@@ -53,21 +56,26 @@ class ObjectTransportationConstraint(CanonicalLinearConstraint):
             map(lambda p_: self.inv_dyn(p_, v_zero, v_zero), p)
         )
         a = np.array(
-            map(lambda (p_, ps_): self.inv_dyn(p_, v_zero, ps_), zip(p, ps))
+            map(lambda p__ps_: self.inv_dyn(
+                p__ps_[0], v_zero, p__ps_[1]), zip(p, ps))
         ) - c
         b = np.array(
-            map(lambda (p_, ps_, pss_): self.inv_dyn(p_, ps_, pss_), zip(p, ps, pss))
+            map(lambda p__ps__pss_: self.inv_dyn(p__ps__pss_[
+                0], p__ps__pss_[1], p__ps__pss_[2]), zip(p, ps, pss))
         ) - c
 
         if self.discretization_type == 0 or self.discretization_type == DiscretizationType.Collocation:
             return a, b, c, F, g, None, None
         elif self.discretization_type == 1 or self.discretization_type == DiscretizationType.Interpolation:
-            return toppra.constraint.canlinear_colloc_to_interpolate(a, b, c, F, g, None, None, gridpoints, identical=self.identical)
+            return toppra.constraint.canlinear_colloc_to_interpolate(
+                a, b, c, F, g, None, None, gridpoints, identical=self.identical)
         else:
-            raise(NotImplementedError("Other form of discretization not supported!"))
+            raise(NotImplementedError(
+                "Other form of discretization not supported!"))
 
 
-def create_object_transporation_constraint(contact, solid_object, discretization_scheme=0):
+def create_object_transporation_constraint(
+        contact, solid_object, discretization_scheme=0):
     """Create a TOPP constraint from a `Contact` and a `SolidObject`.
 
     Each pair of (contact, object) forms a Second-Order Canonical
@@ -98,7 +106,8 @@ def create_object_transporation_constraint(contact, solid_object, discretization
     """
     def inv_dyn(q, qd, qdd):
         T_contact = contact.compute_frame_transform(q)
-        wrench_contact = solid_object.compute_inverse_dyn(q, qd, qdd, T_contact)
+        wrench_contact = solid_object.compute_inverse_dyn(
+            q, qd, qdd, T_contact)
         return wrench_contact
 
     # def cnst_F(q):
@@ -112,8 +121,7 @@ def create_object_transporation_constraint(contact, solid_object, discretization
 
     F, g = contact.get_constraint_coeffs_local()
     constraint = ObjectTransportationConstraint(
-        inv_dyn, F, g, dof=solid_object.get_robot().GetActiveDOF(), discretization_scheme=discretization_scheme)
+        inv_dyn, F, g, dof=solid_object.get_robot().GetActiveDOF(),
+        discretization_scheme=discretization_scheme)
 
     return constraint
-
-

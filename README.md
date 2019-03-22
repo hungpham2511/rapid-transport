@@ -32,6 +32,7 @@ cd openrave-installation
 
 # install toppra
 git clone https://github.com/hungpham2511/toppra && cd toppra/
+git checkout 86cd270  # preferred version of toppra, you can try the lastest one but not guaranteed to work.
 pip install -r requirements.txt --user
 python setup.py install --user
 ```
@@ -85,8 +86,3 @@ roslaunch denso_control joint_trajectory_controller.launch namespace:=denso
 
 transport.paper pick-demo --scene "scenarios/dimdatap2.scenario.yaml" -d 0.9 -e 3 -m RUN
 ```
-
-
-## Citation
-
-

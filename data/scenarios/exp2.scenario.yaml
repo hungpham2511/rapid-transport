@@ -1,3 +1,4 @@
+# This demo was filmed and submitted to ICRA 2018.
 world_xml_dir: pick-exp1.env.xml
 robot:  denso
     

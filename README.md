@@ -82,8 +82,9 @@ roslaunch denso_control rc8_ros_driver.launch rate:=125
 roslaunch denso_gazebo denso_vs060.launch
 
 roslaunch denso_control joint_trajectory_controller.launch namespace:=denso
-```
 
+transport.paper pick-demo --scene "scenarios/dimdatap2.scenario.yaml" -d 0.9 -e 3 -m RUN
+```
 
 
 ## Citation

@@ -25,7 +25,7 @@ SOLVER = 'seidel'
 
 def main(*args, **kwargs):
     demo = PickAndPlaceDemo(*args, **kwargs)
-    demo.view()
+    # demo.view()
     logger.info("Starting demo..")
     success = demo.run()
     if success:
@@ -233,6 +233,7 @@ class PickAndPlaceDemo(object):
         else:
             logger.error("Other EXECUTE mode not supported.")
 
+        # self.view()
         self._dt = dt
         # Load all objects to openRave
         for obj_d in self._scenario['objects']:
@@ -255,12 +256,10 @@ class PickAndPlaceDemo(object):
                 logger.fatal(
                     "Object {:} is in collision.".format(
                         rave_obj.GetName()))
-                self.view()
                 self.check_continue()
 
     def view(self):
         res = self._env.SetViewer('qtosg')
-        time.sleep(0.5)
         return True
 
     def get_time(self):
@@ -478,7 +477,7 @@ class PickAndPlaceDemo(object):
             with self._env:
                 self._robot.Grab(self.get_env().GetKinBody(obj_dict['name']))
             logger.info("Grabbing the object. Continue moving in 1 sec.")
-            time.sleep(1)
+            # time.sleep(1)
 
             # 3+4: APPROACH+TRANSPORT: Plan two trajectories, one
             # trajectory to reach the REACH position, another
@@ -581,14 +580,12 @@ class PickAndPlaceDemo(object):
 
             # remove objects from environment
             T_cur = self.get_env().GetKinBody(obj_dict['name']).GetTransform()
-            T_cur[2, 3] = 0.0
+            T_cur[2, 3] -= 3e-3  # simulate 5mm drop
             self.get_env().GetKinBody(obj_dict['name']).SetTransform(T_cur)
 
         # Move the robot back to HOME
         trajHOME = plan_to_joint_configuration(self._robot, self._qHOME)
         fail = not self.execute_trajectory(trajHOME)
-        time.sleep(2)
-        self.check_continue()
         return not fail
 
     def check_continue(self):
